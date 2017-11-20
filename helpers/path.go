@@ -32,6 +32,7 @@ var (
 	// ErrThemeUndefined is returned when a theme has not be defined by the user.
 	ErrThemeUndefined = errors.New("no theme set")
 
+	// ErrWalkRootTooShort is returned when the root specified for a file walk is shorter than 4 characters.
 	ErrWalkRootTooShort = errors.New("Path too short. Stop walking.")
 )
 
@@ -157,7 +158,6 @@ func (p *PathSpec) AbsPathify(inPath string) string {
 		return filepath.Clean(inPath)
 	}
 
-	// TODO(bep): Consider moving workingDir to argument list
 	return filepath.Join(p.workingDir, inPath)
 }
 
@@ -165,12 +165,6 @@ func (p *PathSpec) AbsPathify(inPath string) string {
 // for the current Hugo project.
 func (p *PathSpec) GetLayoutDirPath() string {
 	return p.AbsPathify(p.layoutDir)
-}
-
-// GetStaticDirPath returns the absolute path to the static file dir
-// for the current Hugo project.
-func (p *PathSpec) GetStaticDirPath() string {
-	return p.AbsPathify(p.staticDir)
 }
 
 // GetThemeDir gets the root directory of the current theme, if there is one.
@@ -228,16 +222,6 @@ func (p *PathSpec) getThemeDirPath(path string) (string, error) {
 func (p *PathSpec) GetThemesDirPath() string {
 	dir, _ := p.getThemeDirPath("static")
 	return dir
-}
-
-// MakeStaticPathRelative makes a relative path to the static files directory.
-// It does so by taking either the project's static path or the theme's static
-// path into consideration.
-func (p *PathSpec) MakeStaticPathRelative(inPath string) (string, error) {
-	staticDir := p.GetStaticDirPath()
-	themeStaticDir := p.GetThemesDirPath()
-
-	return makePathRelative(inPath, staticDir, themeStaticDir)
 }
 
 func makePathRelative(inPath string, possibleDirectories ...string) (string, error) {
@@ -480,7 +464,7 @@ func FindCWD() (string, error) {
 
 // SymbolicWalk is like filepath.Walk, but it supports the root being a
 // symbolic link. It will still not follow symbolic links deeper down in
-// the file structure
+// the file structure.
 func SymbolicWalk(fs afero.Fs, root string, walker filepath.WalkFunc) error {
 
 	// Sanity check

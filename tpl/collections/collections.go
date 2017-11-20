@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gohugoio/hugo/common/types"
 	"github.com/gohugoio/hugo/deps"
 	"github.com/gohugoio/hugo/helpers"
 	"github.com/spf13/cast"
@@ -502,25 +503,25 @@ func (i *intersector) appendIfNotSeen(v reflect.Value) {
 	}
 }
 
-func (ins *intersector) handleValuePair(l1vv, l2vv reflect.Value) {
+func (i *intersector) handleValuePair(l1vv, l2vv reflect.Value) {
 	switch kind := l1vv.Kind(); {
 	case kind == reflect.String:
 		l2t, err := toString(l2vv)
 		if err == nil && l1vv.String() == l2t {
-			ins.appendIfNotSeen(l1vv)
+			i.appendIfNotSeen(l1vv)
 		}
 	case isNumber(kind):
 		f1, err1 := numberToFloat(l1vv)
 		f2, err2 := numberToFloat(l2vv)
 		if err1 == nil && err2 == nil && f1 == f2 {
-			ins.appendIfNotSeen(l1vv)
+			i.appendIfNotSeen(l1vv)
 		}
 	case kind == reflect.Ptr, kind == reflect.Struct:
 		if l1vv.Interface() == l2vv.Interface() {
-			ins.appendIfNotSeen(l1vv)
+			i.appendIfNotSeen(l1vv)
 		}
 	case kind == reflect.Interface:
-		ins.handleValuePair(reflect.ValueOf(l1vv.Interface()), l2vv)
+		i.handleValuePair(reflect.ValueOf(l1vv.Interface()), l2vv)
 	}
 }
 
@@ -640,4 +641,9 @@ func (ns *Namespace) Uniq(l interface{}) (interface{}, error) {
 		}
 	}
 	return ret.Interface(), nil
+}
+
+// KeyVals creates a key and values wrapper.
+func (ns *Namespace) KeyVals(key interface{}, vals ...interface{}) (types.KeyValues, error) {
+	return types.KeyValues{Key: key, Values: vals}, nil
 }

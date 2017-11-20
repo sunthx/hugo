@@ -14,6 +14,7 @@
 package commands
 
 import (
+	"github.com/gohugoio/hugo/common/types"
 	"github.com/gohugoio/hugo/deps"
 	"github.com/gohugoio/hugo/helpers"
 	"github.com/gohugoio/hugo/hugofs"
@@ -21,7 +22,9 @@ import (
 
 type commandeer struct {
 	*deps.DepsCfg
-	pathSpec   *helpers.PathSpec
+	pathSpec    *helpers.PathSpec
+	visitedURLs *types.EvictingStringQueue
+
 	configured bool
 }
 
@@ -37,6 +40,10 @@ func (c *commandeer) Set(key string, value interface{}) {
 func (c *commandeer) PathSpec() *helpers.PathSpec {
 	c.configured = true
 	return c.pathSpec
+}
+
+func (c *commandeer) languages() helpers.Languages {
+	return c.Cfg.Get("languagesSorted").(helpers.Languages)
 }
 
 func (c *commandeer) initFs(fs *hugofs.Fs) error {
@@ -58,5 +65,6 @@ func newCommandeer(cfg *deps.DepsCfg) (*commandeer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &commandeer{DepsCfg: cfg, pathSpec: ps}, nil
+
+	return &commandeer{DepsCfg: cfg, pathSpec: ps, visitedURLs: types.NewEvictingStringQueue(10)}, nil
 }

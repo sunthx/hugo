@@ -15,6 +15,7 @@ package tpl
 
 import (
 	"io"
+	"time"
 
 	"text/template/parse"
 
@@ -22,6 +23,7 @@ import (
 	texttemplate "text/template"
 
 	bp "github.com/gohugoio/hugo/bufferpool"
+	"github.com/gohugoio/hugo/metrics"
 )
 
 var (
@@ -66,6 +68,17 @@ type TemplateDebugger interface {
 // TemplateAdapter implements the TemplateExecutor interface.
 type TemplateAdapter struct {
 	Template
+	Metrics metrics.Provider
+}
+
+// Execute executes the current template. The actual execution is performed
+// by the embedded text or html template, but we add an implementation here so
+// we can add a timer for some metrics.
+func (t *TemplateAdapter) Execute(w io.Writer, data interface{}) error {
+	if t.Metrics != nil {
+		defer t.Metrics.MeasureSince(t.Name(), time.Now())
+	}
+	return t.Template.Execute(w, data)
 }
 
 // ExecuteToString executes the current template and returns the result as a
@@ -101,6 +114,7 @@ func (t *TemplateAdapter) Tree() string {
 	return s
 }
 
+// TemplateFuncsGetter allows to get a map of functions.
 type TemplateFuncsGetter interface {
 	GetFuncs() map[string]interface{}
 }

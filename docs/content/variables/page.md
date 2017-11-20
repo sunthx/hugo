@@ -6,7 +6,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-02-01
 categories: [variables and params]
-#tags: [pages]
+keywords: [pages]
 draft: false
 menu:
   docs:
@@ -32,6 +32,9 @@ See [`.Scratch`](/functions/scratch/) for page-scoped, writable variables.
 `.Content`
 : the content itself, defined below the front matter.
 
+`.CurrentSection`
+: the page's current section. The value can be the page itself if it is a section or the homepage.
+
 `.Data`
 : the data specific to this type of page.
 
@@ -41,11 +44,17 @@ See [`.Scratch`](/functions/scratch/) for page-scoped, writable variables.
 `.Description`
 : the description for the page.
 
+`.Dir`
+: the path of the folder containing this content file. The path is relative to the `content` folder.
+
 `.Draft`
 : a boolean, `true` if the content is marked as a draft in the front matter.
 
 `.ExpiryDate`
 : the date on which the content is scheduled to expire; `.ExpiryDate` pulls from the `expirydate` field in a content's front matter. See also `.PublishDate`, `.Date`, and `.Lastmod`.
+
+`.File`
+: filesystem-related data for this content file. See also [File Variables][].
 
 `.FuzzyWordCount`
 : the approximate number of words in the content.
@@ -79,7 +88,12 @@ See [`.Scratch`](/functions/scratch/) for page-scoped, writable variables.
 `config`.
 
 `.Lastmod`
-: the date the content was last modified; `.Lastmod` pulls from the `lastmod` field in a content's front matter. If `lastmod` is not set, Hugo will default to the `date` field. See also `.ExpiryDate`, `.Date`, and `.PublishDate`.
+: the date the content was last modified. `.Lastmod` pulls from the `lastmod` field in a content's front matter.
+
+ - If `lastmod` is not set, and `.GitInfo` feature is disabled, the front matter `date` field will be used.
+ - If `lastmod` is not set, and `.GitInfo` feature is enabled, `.GitInfo.AuthorDate` will be used instead.
+
+See also `.ExpiryDate`, `.Date`, `.PublishDate`, and [`.GitInfo`][gitinfo].
 
 `.LinkTitle`
 : access when creating links to the content. If set, Hugo will use the `linktitle` from the front matter before `title`.
@@ -137,6 +151,9 @@ http://remarkjs.com)
 `.Section`
 : the [section](/content-management/sections/) this content belongs to.
 
+`.Sections`
+: the [sections](/content-management/sections/) below this content.
+
 `.Site`
 : see [Site Variables](/variables/site/).
 
@@ -179,7 +196,7 @@ Any other value defined in the front matter in a content file, including taxonom
 title: My First Post
 date: date: 2017-02-20T15:26:23-06:00
 categories: [one]
-#tags: [two,three,four]
+tags: [two,three,four]
 ```
 
 With the above front matter, the `tags` and `categories` taxonomies are accessible via the following:
@@ -213,12 +230,10 @@ Two common situations where this type of front matter field could be introduced 
 
 This template would render as follows, assuming you've set [`uglyURLs`](/content-management/urls/) to `false` in your [site `config`](/getting-started/configuration/):
 
-{{% output file="yourbaseurl/review/book01/index.html" %}}
-```
+{{< output file="yourbaseurl/review/book01/index.html" >}}
 <h3><a href="http://www.my-book-link.here">Buy this book</a></h3>
 <p>It was recommended by my Mother.</p>
-```
-{{% /output %}}
+{{< /output >}}
 
 {{% note %}}
 See [Archetypes](/content-management/archetypes/) for consistency of `Params` across pieces of content.
@@ -268,3 +283,6 @@ The top-level key will be preferred. Therefore, the following method, when appli
 {{ $.Param "favorites.flavor" }}
 => vanilla
 ```
+
+[gitinfo]: /variables/git/
+[File Variables]: /variables/files/

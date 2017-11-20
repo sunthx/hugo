@@ -27,7 +27,7 @@ import (
 
 // renderPages renders pages each corresponding to a markdown file.
 // TODO(bep np doc
-func (s *Site) renderPages() error {
+func (s *Site) renderPages(filter map[string]bool) error {
 
 	results := make(chan error)
 	pages := make(chan *Page)
@@ -44,7 +44,12 @@ func (s *Site) renderPages() error {
 		go pageRenderer(s, pages, results, wg)
 	}
 
+	hasFilter := filter != nil && len(filter) > 0
+
 	for _, page := range s.Pages {
+		if hasFilter && !filter[page.RelPermalink()] {
+			continue
+		}
 		pages <- page
 	}
 
@@ -142,7 +147,7 @@ func (s *Site) renderPaginator(p *PageOutput) error {
 
 		// write alias for page 1
 		addend := fmt.Sprintf("/%s/%d", paginatePath, 1)
-		target, err := p.createTargetPath(p.outputFormat, addend)
+		target, err := p.createTargetPath(p.outputFormat, false, addend)
 		if err != nil {
 			return err
 		}
@@ -382,7 +387,7 @@ func (s *Site) renderAliases() error {
 		}
 	}
 
-	if s.owner.multilingual.enabled() {
+	if s.owner.multilingual.enabled() && !s.owner.IsMultihost() {
 		mainLang := s.owner.multilingual.DefaultLang
 		if s.Info.defaultContentLanguageInSubdir {
 			mainLangURL := s.PathSpec.AbsURL(mainLang.Lang, false)

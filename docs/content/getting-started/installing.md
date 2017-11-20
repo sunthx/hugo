@@ -7,7 +7,7 @@ publishdate: 2016-11-01
 lastmod: 2017-02-20
 categories: [getting started,fundamentals]
 authors: ["Michael Henderson"]
-#tags: [install,pc,windows,linux,macos,binary,tarball]
+keywords: [install,pc,windows,linux,macos,binary,tarball]
 menu:
   docs:
     parent: "getting-started"
@@ -28,10 +28,10 @@ Hugo is written in [Go](https://golang.org/) with support for multiple platforms
 
 Hugo currently provides pre-built binaries for the following:
 
-* <i class="icon-apple"></i> macOS (Darwin) for x64, i386, and ARM architectures
-* <i class="icon-windows"></i> Windows
-* <i class="icon-linux"></i> Linux
-* <i class="icon-freebsd"></i> FreeBSD
+* macOS (Darwin) for x64, i386, and ARM architectures
+* Windows
+* Linux
+* FreeBSD
 
 Hugo may also be compiled from source wherever the Go compiler tool chain can run; e.g., on other operating systems such as DragonFly BSD, OpenBSD, Plan&nbsp;9, Solaris, and others. See <https://golang.org/doc/install/source> for the full set of supported combinations of target operating systems and compilation architectures.
 
@@ -87,7 +87,7 @@ go install github.com/gohugoio/hugo
 If you are a Windows user, substitute the `$HOME` environment variable above with `%USERPROFILE%`.
 {{% /note %}}
 
-## <i class="icon-apple"></i>macOS
+## macOS
 
 ### Assumptions
 
@@ -120,6 +120,8 @@ Since building from source is appealing to more seasoned command line users, thi
 {{% /note %}}
 
 ### Install Hugo with Brew
+
+{{< youtube WvhCGlLcrF8 >}}
 
 #### Step 1: Install `brew` if you haven't already
 
@@ -295,9 +297,11 @@ go build -o hugo main.go
 
 Then place the `hugo` executable somewhere in your `$PATH`. You're now ready to start using Hugo.
 
-## <i class="icon-windows"></i>Windows
+## Windows
 
 The following aims to be a complete guide to installing Hugo on your Windows PC.
+
+{{< youtube G7umPCU-8xc >}}
 
 ### Assumptions
 
@@ -388,10 +392,10 @@ C:\Hugo\Sites> hugo new site example.com
 You should now have a directory at `C:\Hugo\Sites\example.com`. Change into that directory and list the contents. You should get output similar to the following:
 
 ```
-C:\Hugo\Sites&gt;cd example.com
-C:\Hugo\Sites\example.com&gt;dir
-&nbsp;Directory of C:\hugo\sites\example.com
-&nbsp;
+C:\Hugo\Sites> cd example.com
+C:\Hugo\Sites\example.com> dir
+Directory of C:\hugo\sites\example.com
+
 04/13/2015  10:44 PM    <DIR>          .
 04/13/2015  10:44 PM    <DIR>          ..
 04/13/2015  10:44 PM    <DIR>          archetypes
@@ -410,42 +414,7 @@ C:\Hugo\Sites\example.com&gt;dir
 
 {{< youtube c8fJIRNChmU >}}
 
-## <i class="icon-linux"></i>Linux
-
-### Debian and Ubuntu
-
-In any of the [Linux distributions that support snaps](https://snapcraft.io/docs/core/install):
-
-```
-sudo apt install hugo
-```
-
-#### Pros
-
-* Native Debian/Ubuntu package maintained by Debian Developers
-* Pre-installed bash completion script and `man` pages
-
-#### Cons
-
-* Might not be the latest version, especially if you are using an older, stable version (e.g., Ubuntu 16.04 LTS). Until backports and PPA are available, you may consider installing the Hugo snap package to get the latest version of Hugo, as described below.
-
-### Arch
-
-You can also install Hugo from the [Arch user repository](https://aur.archlinux.org/) on Arch Linux or derivatives such as Manjaro.
-
-Be aware that Hugo is built from source. This means that additional tools like [Git](https://git-scm.com) and [Go](https://golang.org/doc/install) will be installed as well.
-
-```
-sudo pacman -S yaourt
-yaourt -S hugo
-```
-
-### Fedora, CentOS, and Red Hat
-
-* <https://copr.fedorainfracloud.org/coprs/spf13/Hugo/> (updated to Hugo v0.16)
-* <https://copr.fedorainfracloud.org/coprs/daftaupe/hugo/> (updated to Hugo v0.22); usually released a few days after the official Hugo release.
-
-See the [related discussion in the Hugo forums][redhatforum].
+## Linux
 
 ### Snap Package
 
@@ -459,9 +428,40 @@ snap install hugo
 Hugo-as-a-snap can write only inside the user’s `$HOME` directory---and gvfs-mounted directories owned by the user---because of Snaps’ confinement and security model. More information is also available [in this related GitHub issue](https://github.com/gohugoio/hugo/issues/3143).
 {{% /note %}}
 
+### Debian and Ubuntu
+
+Debian and Ubuntu provide a `hugo` version via `apt-get`:
+
+```
+sudo apt-get install hugo
+```
+
+#### Pros
+
+* Native Debian/Ubuntu package maintained by Debian Developers
+* Pre-installed bash completion script and `man` pages
+
+#### Cons
+
+* Might not be the latest version, especially if you are using an older, stable version (e.g., Ubuntu 16.04 LTS). Until backports and PPA are available, you may consider installing the Hugo snap package to get the latest version of Hugo.
+
+### Arch Linux
+
+You can also install Hugo from the Arch Linux [community](https://www.archlinux.org/packages/community/x86_64/hugo/) repository. Applies also for derivatives such as Manjaro.
+
+```
+sudo pacman -Sy hugo
+```
+
+### Fedora, CentOS, and Red Hat
+
+* <https://copr.fedorainfracloud.org/coprs/daftaupe/hugo/>
+
+See the [related discussion in the Hugo forums][redhatforum].
+
 ## Upgrade Hugo
 
-Upgrading Hugo is as easy as downloading and replacing the executable you’ve placed in your `PATH`.
+Upgrading Hugo is as easy as downloading and replacing the executable you’ve placed in your `PATH` or run `brew upgrade hugo` if using Homebrew.
 
 ## Install Pygments (Optional)
 
@@ -483,7 +483,7 @@ Now that you've installed Hugo, read the [Quick Start guide][quickstart] and exp
 [installgit]: http://git-scm.com/
 [installgo]: https://golang.org/dl/
 [Path Editor]: https://patheditor2.codeplex.com/
-[pygments]: https://pygments.org
+[pygments]: http://pygments.org
 [quickstart]: /getting-started/quick-start/
 [redhatforum]: https://discourse.gohugo.io/t/solved-fedora-copr-repository-out-of-service/2491
 [releases]: https://github.com/gohugoio/hugo/releases

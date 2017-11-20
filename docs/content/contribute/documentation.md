@@ -6,7 +6,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-02-01
 categories: [contribute]
-#tags: [docs,documentation,community, contribute]
+keywords: [docs,documentation,community, contribute]
 menu:
   docs:
     parent: "contribute"
@@ -37,10 +37,6 @@ Adding new content to the Hugo docs follows the same pattern, regardless of the 
 ```
 hugo new <DOCS-SECTION>/<new-content-lowercase>.md
 ```
-
-{{% note "`title:`, `date:`, and Field Order" %}}
-`title` and `date` fields are added automatically when using archetypes via `hugo new`. Do not be worried if the order of the new file's front matter fields on your local machine is different than that of the examples provided in the Hugo docs. This is a known issue [(#452)](https://github.com/gohugoio/hugo/issues/452).
-{{% /note %}}
 
 ### Add a New Function
 
@@ -91,20 +87,6 @@ Here is a review of the front matter fields automatically generated for you usin
 : an extended description of the new function; examples are not only welcomed but encouraged.
 
 In the body of your function, expand the short description used in the front matter. Include as many examples as possible, and leverage the Hugo docs [`code` shortcode](#adding-code-blocks). If you are unable to add examples but would like to solicit help from the Hugo community, add `needsexample: true` to your front matter.
-
-### Add a New Tutorial
-
-Once you have cloned the Hugo repository, you can create a new tutorial via the following command. Name the markdown file accordingly:
-
-```
-hugo new tutorials/my-new-tutorial.md
-```
-
-The archetype for the `tutorials` content type is as follows:
-
-{{< code file="archetypes/tutorials.md" >}}
-{{< readfile file="/themes/gohugoioTheme/archetypes/tutorials.md">}}
-{{< /code >}}
 
 ## Add Code Blocks
 
@@ -161,8 +143,7 @@ This example HTML code block tells Hugo users the following:
 2. This snippet is complete enough to be downloaded and implemented in a Hugo project, as demonstrated by `download="single.html"`.
 
 ```
-{{%/* code file="layouts/_default/single.html" download="single.html" */%}}
-```
+{{</* code file="layouts/_default/single.html" download="single.html" */>}}
 {{ define "main" }}
 <main>
     <article>
@@ -180,8 +161,7 @@ This example HTML code block tells Hugo users the following:
     </article>
 </main>
 {{ end }}
-```
-{{%/* /code */%}}
+{{</* /code */>}}
 ```
 
 ##### Example 'code' Display
@@ -223,12 +203,10 @@ The `output` shortcode is almost identical to the `code` shortcode but only take
 
 The preceding `output` example will render as follows to the Hugo docs:
 
-{{% output file="post/my-first-post/index.html" %}}
-```
+{{< output file="post/my-first-post/index.html" >}}
 <h1>This is my First Hugo Blog Post</h1>
 <p>I am excited to be using Hugo.</p>
-```
-{{% /output %}} -->
+{{< /output >}} -->
 
 ## Blockquotes
 
@@ -278,13 +256,11 @@ Here is a piece of information I would like to draw your **attention** to.
 
 #### Example `note` Output
 
-{{% output file="note-with-heading.html" %}}
-```
+{{< output file="note-with-heading.html" >}}
 {{% note %}}
 Here is a piece of information I would like to draw your **attention** to.
 {{% /note %}}
-```
-{{% /output %}}
+{{< /output >}}
 
 #### Example `note` Display
 
@@ -306,13 +282,11 @@ Here's a bit of advice to improve your productivity with Hugo.
 
 #### Example `tip` Output
 
-{{% output file="tip-output.html" %}}
-```
+{{< output file="tip-output.html" >}}
 {{% tip %}}
 Here's a bit of advice to improve your productivity with Hugo.
 {{% /tip %}}
-```
-{{% /output %}}
+{{< /output >}}
 
 #### Example `tip` Display
 
@@ -334,13 +308,11 @@ This is a warning, which should be reserved for *important* information like bre
 
 #### Example `warning` Output
 
-{{% output file="warning-admonition-output.html" %}}
-```
+{{< output file="warning-admonition-output.html" >}}
 {{% warning %}}
 This is a warning, which should be reserved for *important* information like breaking changes.
 {{% /warning %}}
-```
-{{% /output %}}
+{{< /output >}}
 
 #### Example `warning` Display
 

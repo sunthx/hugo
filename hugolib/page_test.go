@@ -714,6 +714,42 @@ func TestPageWithDelimiterForMarkdownThatCrossesBorder(t *testing.T) {
 	}
 }
 
+// Issue #3854
+func TestPageWithDateFields(t *testing.T) {
+	assert := require.New(t)
+	pageWithDate := `---
+title: P%d
+weight: %d
+%s: 2017-10-13
+---
+Simple Page With Some Date`
+
+	hasBothDates := func(p *Page) bool {
+		return p.Date.Year() == 2017 && p.PublishDate.Year() == 2017
+	}
+
+	datePage := func(field string, weight int) string {
+		return fmt.Sprintf(pageWithDate, weight, weight, field)
+	}
+
+	t.Parallel()
+	assertFunc := func(t *testing.T, ext string, pages Pages) {
+		assert.True(len(pages) > 0)
+		for _, p := range pages {
+			assert.True(hasBothDates(p))
+		}
+
+	}
+
+	fields := []string{"date", "publishdate", "pubdate", "published"}
+	pageContents := make([]string, len(fields))
+	for i, field := range fields {
+		pageContents[i] = datePage(field, i+1)
+	}
+
+	testAllMarkdownEnginesForPages(t, assertFunc, nil, pageContents...)
+}
+
 // Issue #2601
 func TestPageRawContent(t *testing.T) {
 	t.Parallel()
@@ -1096,6 +1132,60 @@ func TestSliceToLower(t *testing.T) {
 	}
 }
 
+func TestReplaceDivider(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		content           string
+		from              string
+		to                string
+		expectedContent   string
+		expectedTruncated bool
+	}{
+		{"none", "a", "b", "none", false},
+		{"summary <!--more--> content", "<!--more-->", "HUGO", "summary HUGO content", true},
+		{"summary\n\ndivider", "divider", "HUGO", "summary\n\nHUGO", false},
+		{"summary\n\ndivider\n\r", "divider", "HUGO", "summary\n\nHUGO\n\r", false},
+	}
+
+	for i, test := range tests {
+		replaced, truncated := replaceDivider([]byte(test.content), []byte(test.from), []byte(test.to))
+
+		if truncated != test.expectedTruncated {
+			t.Fatalf("[%d] Expected truncated to be %t, was %t", i, test.expectedTruncated, truncated)
+		}
+
+		if string(replaced) != test.expectedContent {
+			t.Fatalf("[%d] Expected content to be %q, was %q", i, test.expectedContent, replaced)
+		}
+	}
+}
+
+func BenchmarkReplaceDivider(b *testing.B) {
+	divider := "HUGO_DIVIDER"
+	from, to := []byte(divider), []byte("HUGO_REPLACED")
+
+	withDivider := make([][]byte, b.N)
+	noDivider := make([][]byte, b.N)
+
+	for i := 0; i < b.N; i++ {
+		withDivider[i] = []byte(strings.Repeat("Summary ", 5) + "\n" + divider + "\n" + strings.Repeat("Word ", 300))
+		noDivider[i] = []byte(strings.Repeat("Word ", 300))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, t1 := replaceDivider(withDivider[i], from, to)
+		_, t2 := replaceDivider(noDivider[i], from, to)
+		if !t1 {
+			b.Fatal("Should be truncated")
+		}
+		if t2 {
+			b.Fatal("Should not be truncated")
+		}
+	}
+}
+
 func TestPagePaths(t *testing.T) {
 	t.Parallel()
 
@@ -1347,6 +1437,29 @@ func TestKind(t *testing.T) {
 	require.Equal(t, "section", KindSection)
 	require.Equal(t, "taxonomy", KindTaxonomy)
 	require.Equal(t, "taxonomyTerm", KindTaxonomyTerm)
+
+}
+
+func TestTranslationKey(t *testing.T) {
+	t.Parallel()
+	assert := require.New(t)
+	cfg, fs := newTestCfg()
+
+	writeSource(t, fs, filepath.Join("content", filepath.FromSlash("sect/simple.no.md")), "---\ntitle: \"A1\"\ntranslationKey: \"k1\"\n---\nContent\n")
+	writeSource(t, fs, filepath.Join("content", filepath.FromSlash("sect/simple.en.md")), "---\ntitle: \"A2\"\n---\nContent\n")
+
+	s := buildSingleSite(t, deps.DepsCfg{Fs: fs, Cfg: cfg}, BuildCfg{SkipRender: true})
+
+	require.Len(t, s.RegularPages, 2)
+
+	home, _ := s.Info.Home()
+	assert.NotNil(home)
+	assert.Equal("home", home.TranslationKey())
+	assert.Equal("page/k1", s.RegularPages[0].TranslationKey())
+	p2 := s.RegularPages[1]
+
+	// This is a single language setup
+	assert.Equal("page/sect/simple.en", p2.TranslationKey())
 
 }
 

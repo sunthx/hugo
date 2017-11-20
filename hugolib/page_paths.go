@@ -99,15 +99,22 @@ func (p *Page) initTargetPathDescriptor() error {
 		d.LangPrefix = p.Lang()
 	}
 
-	if override, ok := p.Site.Permalinks[p.Section()]; ok {
-		opath, err := override.Expand(p)
-		if err != nil {
-			return err
-		}
+	// Expand only KindPage and KindTaxonomy; don't expand other Kinds of Pages
+	// like KindSection or KindTaxonomyTerm because they are "shallower" and
+	// the permalink configuration values are likely to be redundant, e.g.
+	// naively expanding /category/:slug/ would give /category/categories/ for
+	// the "categories" KindTaxonomyTerm.
+	if p.Kind == KindPage || p.Kind == KindTaxonomy {
+		if override, ok := p.Site.Permalinks[p.Section()]; ok {
+			opath, err := override.Expand(p)
+			if err != nil {
+				return err
+			}
 
-		opath, _ = url.QueryUnescape(opath)
-		opath = filepath.FromSlash(opath)
-		d.ExpandedPermalink = opath
+			opath, _ = url.QueryUnescape(opath)
+			opath = filepath.FromSlash(opath)
+			d.ExpandedPermalink = opath
+		}
 	}
 
 	p.targetPathDescriptorPrototype = d
@@ -118,10 +125,14 @@ func (p *Page) initTargetPathDescriptor() error {
 // createTargetPath creates the target filename for this Page for the given
 // output.Format. Some additional URL parts can also be provided, the typical
 // use case being pagination.
-func (p *Page) createTargetPath(t output.Format, addends ...string) (string, error) {
+func (p *Page) createTargetPath(t output.Format, noLangPrefix bool, addends ...string) (string, error) {
 	d, err := p.createTargetPathDescriptor(t)
 	if err != nil {
 		return "", nil
+	}
+
+	if noLangPrefix {
+		d.LangPrefix = ""
 	}
 
 	if len(addends) > 0 {
@@ -151,7 +162,11 @@ func createTargetPath(d targetPathDescriptor) string {
 	}
 
 	if d.Kind != KindPage && len(d.Sections) > 0 {
-		pagePath = filepath.Join(d.Sections...)
+		if d.ExpandedPermalink != "" {
+			pagePath = filepath.Join(pagePath, d.ExpandedPermalink)
+		} else {
+			pagePath = filepath.Join(d.Sections...)
+		}
 		needsBase = false
 	}
 
@@ -235,7 +250,7 @@ func (p *Page) createRelativePermalink() string {
 }
 
 func (p *Page) createRelativePermalinkForOutputFormat(f output.Format) string {
-	tp, err := p.createTargetPath(f)
+	tp, err := p.createTargetPath(f, p.s.owner.IsMultihost())
 
 	if err != nil {
 		p.s.Log.ERROR.Printf("Failed to create permalink for page %q: %s", p.FullFilePath(), err)

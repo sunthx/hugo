@@ -6,7 +6,7 @@ date: 2017-01-10
 publishdate: 2017-01-10
 lastmod: 2017-01-10
 categories: [content management]
-#tags: [multilingual,i18n, internationalization]
+keywords: [multilingual,i18n, internationalization]
 menu:
   docs:
     parent: "content-management"
@@ -95,7 +95,7 @@ Translated articles are identified by the name of the content file.
 1. `/content/about.en.md`
 2. `/content/about.fr.md`
 
-In this eample, the `about.md` will be assigned the configured `defaultContentLanguage`. 
+In this example, the `about.md` will be assigned the configured `defaultContentLanguage`. 
 
 1. `/content/about.md`
 2. `/content/about.fr.md`

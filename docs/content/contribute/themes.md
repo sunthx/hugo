@@ -6,7 +6,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-02-27
 categories: [contribute]
-#tags: [contribute,themes,design]
+keywords: [contribute,themes,design]
 authors: [digitalcraftsman]
 menu:
   docs:
@@ -64,7 +64,7 @@ name = ""
 license = "MIT"
 licenselink = "https://github.com/<YOURNAME>/<YOURTHEME>/blob/master/LICENSE.md"
 description = ""
-homepage = "http://example.com/"
+homepage = "https://example.com/"
 tags = []
 features = []
 min_version = 0.19
@@ -105,7 +105,7 @@ min_version = 0.13
 
 {{% note %}}
 1. This is different from the `theme.toml` file created by `hugo new theme` in Hugo versions before v0.14.
-2. Only `theme.toml` is accepted; ie. not `theme.yaml` andnot `theme.json`.
+2. Only `theme.toml` is accepted; ie. not `theme.yaml` and `theme.json`.
 {{% /note %}}
 
 ### Images

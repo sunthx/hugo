@@ -24,6 +24,8 @@ import (
 	"github.com/gohugoio/hugo/deps"
 )
 
+// TestTemplateProvider is global deps.ResourceProvider.
+// NOTE: It's currently unused.
 var TestTemplateProvider deps.ResourceProvider
 
 // partialCache represents a cache of partials protected by a mutex.
@@ -75,10 +77,18 @@ func (ns *Namespace) Include(name string, contextList ...interface{}) (interface
 			}
 
 			if _, ok := templ.Template.(*texttemplate.Template); ok {
-				return b.String(), nil
+				s := b.String()
+				if ns.deps.Metrics != nil {
+					ns.deps.Metrics.TrackValue(n, s)
+				}
+				return s, nil
 			}
 
-			return template.HTML(b.String()), nil
+			s := b.String()
+			if ns.deps.Metrics != nil {
+				ns.deps.Metrics.TrackValue(n, s)
+			}
+			return template.HTML(s), nil
 
 		}
 	}
@@ -86,11 +96,11 @@ func (ns *Namespace) Include(name string, contextList ...interface{}) (interface
 	return "", fmt.Errorf("Partial %q not found", name)
 }
 
-// getCached executes and caches partial templates.  An optional variant
+// IncludeCached executes and caches partial templates.  An optional variant
 // string parameter (a string slice actually, but be only use a variadic
 // argument to make it optional) can be passed so that a given partial can have
 // multiple uses. The cache is created with name+variant as the key.
-func (ns *Namespace) getCached(name string, context interface{}, variant ...string) (interface{}, error) {
+func (ns *Namespace) IncludeCached(name string, context interface{}, variant ...string) (interface{}, error) {
 	key := name
 	if len(variant) > 0 {
 		for i := 0; i < len(variant); i++ {
@@ -100,27 +110,28 @@ func (ns *Namespace) getCached(name string, context interface{}, variant ...stri
 	return ns.getOrCreate(key, name, context)
 }
 
-func (ns *Namespace) getOrCreate(key, name string, context interface{}) (p interface{}, err error) {
-	var ok bool
+func (ns *Namespace) getOrCreate(key, name string, context interface{}) (interface{}, error) {
 
 	ns.cachedPartials.RLock()
-	p, ok = ns.cachedPartials.p[key]
+	p, ok := ns.cachedPartials.p[key]
 	ns.cachedPartials.RUnlock()
 
 	if ok {
-		return
+		return p, nil
+	}
+
+	p, err := ns.Include(name, context)
+	if err != nil {
+		return nil, err
 	}
 
 	ns.cachedPartials.Lock()
-	if p, ok = ns.cachedPartials.p[key]; !ok {
-		ns.cachedPartials.Unlock()
-		p, err = ns.Include(name, context)
-
-		ns.cachedPartials.Lock()
-		ns.cachedPartials.p[key] = p
-
+	defer ns.cachedPartials.Unlock()
+	// Double-check.
+	if p2, ok := ns.cachedPartials.p[key]; ok {
+		return p2, nil
 	}
-	ns.cachedPartials.Unlock()
+	ns.cachedPartials.p[key] = p
 
-	return
+	return p, nil
 }

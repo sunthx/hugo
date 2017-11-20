@@ -5,7 +5,7 @@ godocref:
 date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-02-01
-#tags: [iteration]
+keywords: [iteration]
 categories: [functions]
 menu:
   docs:
@@ -21,6 +21,10 @@ aliases: [/extras/scratch/,/doc/scratch/]
 ---
 
 In most cases you can do well without `Scratch`, but there are some use cases that aren't solvable with Go's templates without `Scratch`'s help, due to scoping issues.
+
+{{% note %}}
+See [this Go issue](https://github.com/golang/go/issues/10608) for the main motivation behind Scratch.
+{{% /note %}}
 
 `Scratch` is added to both `Page` and `Shortcode` -- with following methods:
 

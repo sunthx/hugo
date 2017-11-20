@@ -6,7 +6,7 @@ date: 2017-01-09
 publishdate: 2017-01-09
 lastmod: 2017-02-24
 categories: [content management]
-#tags: ["front matter", "yaml", "toml", "json", "metadata", "archetypes"]
+keywords: ["front matter", "yaml", "toml", "json", "metadata", "archetypes"]
 menu:
   docs:
     parent: "content-management"
@@ -18,6 +18,8 @@ toc: true
 ---
 
 **Front matter** allows you to keep metadata attached to an instance of a [content type][]---i.e., embedded inside a content file---and is one of the many features that gives Hugo its strength.
+
+{{< youtube Yh2xKRJGff4 >}}
 
 ## Front Matter Formats
 
@@ -54,7 +56,7 @@ slug = "spf13-vim-3-0-release-and-new-website"
 ---
 title: "spf13-vim 3.0 release and new website"
 description: "spf13-vim is a cross platform distribution of vim plugins and resources for Vim."
-#tags: [ ".vimrc", "plugins", "spf13-vim", "vim" ]
+tags: [ ".vimrc", "plugins", "spf13-vim", "vim" ]
 lastmod: 2015-12-23
 date: "2012-04-06"
 categories:
@@ -184,7 +186,7 @@ It's possible to set some options for Markdown rendering in a content's front ma
 [content type]: /content-management/types/
 [contentorg]: /content-management/organization/
 [definetype]: /content-management/types/#defining-a-content-type "Learn how to specify a type and a layout in a content's front matter"
-[json]: /documents/ecma-404-json-spec.pdf "Specification for JSON, JavaScript Object Notation"
+[json]: https://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf "Specification for JSON, JavaScript Object Notation"
 [lists]: /templates/lists/#ordering-content "See how to order content in list pages; for example, templates that look to specific _index.md for content and front matter."
 [lookup]: /templates/lookup-order/ "Hugo traverses your templates in a specific order when rendering content to allow for DRYer templating."
 [ordering]: /templates/lists/ "Hugo provides multiple ways to sort and order your content in list templates"

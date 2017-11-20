@@ -6,7 +6,7 @@ enableEmoji = true
 footnotereturnlinkcontents = "↩"
 languageCode = "en-us"
 metaDataFormat = "yaml"
-title = "Hugo: A Fast and Flexible Website Generator"
+title = "Hugo"
 theme = "gohugoioTheme"
 
 googleAnalytics = "UA-7131036-4"
@@ -21,11 +21,16 @@ disableAliases = true
 # It is (currently) not in use, but you can do ```go in a content file if you want to.
 pygmentsCodeFences = true
 
+pygmentsOptions = ""
+# Use the Chroma stylesheet
+pygmentsUseClasses = true
+pygmentsUseClassic = false
+
 # See https://help.farbox.com/pygments.html
 pygmentsStyle = "friendly"
 
 [outputs]
-home = [ "HTML", "RSS", "REDIR" ]
+home = [ "HTML", "RSS", "REDIR", "HEADERS" ]
 section = [ "HTML", "RSS"]
 
 [mediaTypes]
@@ -39,7 +44,25 @@ mediatype = "text/netlify"
 baseName = "_redirects"
 isPlainText = true
 notAlternative = true
+[outputFormats.HEADERS]
+mediatype = "text/netlify"
+baseName = "_headers"
+isPlainText = true
+notAlternative = true
 
+[related]
+
+threshold = 80
+includeNewer = true
+toLower = false
+
+[[related.indices]]
+name = "keywords"
+weight = 100
+[[related.indices]]
+name  = "date"
+weight = 10
+pattern = "2006"
 
 [social]
 twitter = "GoHugoIO"
@@ -48,11 +71,13 @@ twitter = "GoHugoIO"
 [params]
   description = "The world’s fastest framework for building websites"
   ## Used for views in rendered HTML (i.e., rather than using the .Hugo variable)
-  release = "Hugo-Next"
+  release = "0.31-DEV"
   ## Setting this to true will add a "noindex" to *EVERY* page on the site
   removefromexternalsearch = false
   ## Gh repo for site footer (include trailing slash)
   ghrepo = "https://github.com/gohugoio/hugoDocs/"
+  ## GH Repo for filing a new issue
+  github_repo = "https://github.com/gohugoio/hugo/issues/new"
   ### Edit content repo (set to automatically enter "edit" mode; this is good for "improve this page" links)
   ghdocsrepo = "https://github.com/gohugoio/hugoDocs/tree/master/docs"
   ## Gitter URL

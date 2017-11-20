@@ -8,13 +8,14 @@ import (
 	"github.com/gohugoio/hugo/config"
 	"github.com/gohugoio/hugo/helpers"
 	"github.com/gohugoio/hugo/hugofs"
+	"github.com/gohugoio/hugo/metrics"
 	"github.com/gohugoio/hugo/output"
 	"github.com/gohugoio/hugo/tpl"
 	jww "github.com/spf13/jwalterweatherman"
 )
 
 // Deps holds dependencies used by many.
-// There will be normally be only one instance of deps in play
+// There will be normally only one instance of deps in play
 // at a given time, i.e. one per Site built.
 type Deps struct {
 	// The logger to use.
@@ -47,6 +48,8 @@ type Deps struct {
 	WithTemplate     func(templ tpl.TemplateHandler) error `json:"-"`
 
 	translationProvider ResourceProvider
+
+	Metrics metrics.Provider
 }
 
 // ResourceProvider is used to create and refresh, and clone resources needed.
@@ -55,10 +58,12 @@ type ResourceProvider interface {
 	Clone(deps *Deps) error
 }
 
+// TemplateHandler returns the used tpl.TemplateFinder as tpl.TemplateHandler.
 func (d *Deps) TemplateHandler() tpl.TemplateHandler {
 	return d.Tmpl.(tpl.TemplateHandler)
 }
 
+// LoadResources loads translations and templates.
 func (d *Deps) LoadResources() error {
 	// Note that the translations need to be loaded before the templates.
 	if err := d.translationProvider.Update(d); err != nil {
@@ -76,6 +81,9 @@ func (d *Deps) LoadResources() error {
 	return nil
 }
 
+// New initializes a Dep struct.
+// Defaults are set for nil values,
+// but TemplateProvider, TranslationProvider and Language are always required.
 func New(cfg DepsCfg) (*Deps, error) {
 	var (
 		logger = cfg.Logger
@@ -109,6 +117,11 @@ func New(cfg DepsCfg) (*Deps, error) {
 		return nil, err
 	}
 
+	contentSpec, err := helpers.NewContentSpec(cfg.Language)
+	if err != nil {
+		return nil, err
+	}
+
 	d := &Deps{
 		Fs:                  fs,
 		Log:                 logger,
@@ -116,9 +129,13 @@ func New(cfg DepsCfg) (*Deps, error) {
 		translationProvider: cfg.TranslationProvider,
 		WithTemplate:        cfg.WithTemplate,
 		PathSpec:            ps,
-		ContentSpec:         helpers.NewContentSpec(cfg.Language),
+		ContentSpec:         contentSpec,
 		Cfg:                 cfg.Language,
 		Language:            cfg.Language,
+	}
+
+	if cfg.Cfg.GetBool("templateMetrics") {
+		d.Metrics = metrics.NewProvider(cfg.Cfg.GetBool("templateMetricsHints"))
 	}
 
 	return d, nil
@@ -134,7 +151,11 @@ func (d Deps) ForLanguage(l *helpers.Language) (*Deps, error) {
 		return nil, err
 	}
 
-	d.ContentSpec = helpers.NewContentSpec(l)
+	d.ContentSpec, err = helpers.NewContentSpec(l)
+	if err != nil {
+		return nil, err
+	}
+
 	d.Cfg = l
 	d.Language = l
 

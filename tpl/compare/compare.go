@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/gohugoio/hugo/compare"
 )
 
 // New returns a new instance of the compare-namespaced template functions.
@@ -85,6 +87,14 @@ func (*Namespace) Default(dflt interface{}, given ...interface{}) (interface{}, 
 
 // Eq returns the boolean truth of arg1 == arg2.
 func (*Namespace) Eq(x, y interface{}) bool {
+
+	// hugolib.Page implements compare.Eqer to make Page and PageOutput comparable.
+	if e1, ok := x.(compare.Eqer); ok {
+		if e2, ok := y.(compare.Eqer); ok {
+			return e1.Eq(e2)
+		}
+	}
+
 	normalize := func(v interface{}) interface{} {
 		vv := reflect.ValueOf(v)
 		switch vv.Kind() {
@@ -130,6 +140,15 @@ func (n *Namespace) Le(a, b interface{}) bool {
 func (n *Namespace) Lt(a, b interface{}) bool {
 	left, right := n.compareGetFloat(a, b)
 	return left < right
+}
+
+// Conditional can be used as a ternary operator.
+// It returns a if condition, else b.
+func (n *Namespace) Conditional(condition bool, a, b interface{}) interface{} {
+	if condition {
+		return a
+	}
+	return b
 }
 
 func (*Namespace) compareGetFloat(a interface{}, b interface{}) (float64, float64) {

@@ -2,76 +2,76 @@
   "media": {
     "types": [
       {
-        "Type": "application/javascript",
-        "String": "application/javascript+js",
-        "MainType": "application",
-        "SubType": "javascript",
-        "Suffix": "js",
-        "Delimiter": "."
+        "type": "application/javascript",
+        "string": "application/javascript+js",
+        "mainType": "application",
+        "subType": "javascript",
+        "suffix": "js",
+        "delimiter": "."
       },
       {
-        "Type": "application/json",
-        "String": "application/json+json",
-        "MainType": "application",
-        "SubType": "json",
-        "Suffix": "json",
-        "Delimiter": "."
+        "type": "application/json",
+        "string": "application/json+json",
+        "mainType": "application",
+        "subType": "json",
+        "suffix": "json",
+        "delimiter": "."
       },
       {
-        "Type": "application/rss",
-        "String": "application/rss+xml",
-        "MainType": "application",
-        "SubType": "rss",
-        "Suffix": "xml",
-        "Delimiter": "."
+        "type": "application/rss",
+        "string": "application/rss+xml",
+        "mainType": "application",
+        "subType": "rss",
+        "suffix": "xml",
+        "delimiter": "."
       },
       {
-        "Type": "application/xml",
-        "String": "application/xml+xml",
-        "MainType": "application",
-        "SubType": "xml",
-        "Suffix": "xml",
-        "Delimiter": "."
+        "type": "application/xml",
+        "string": "application/xml+xml",
+        "mainType": "application",
+        "subType": "xml",
+        "suffix": "xml",
+        "delimiter": "."
       },
       {
-        "Type": "text/calendar",
-        "String": "text/calendar+ics",
-        "MainType": "text",
-        "SubType": "calendar",
-        "Suffix": "ics",
-        "Delimiter": "."
+        "type": "text/calendar",
+        "string": "text/calendar+ics",
+        "mainType": "text",
+        "subType": "calendar",
+        "suffix": "ics",
+        "delimiter": "."
       },
       {
-        "Type": "text/css",
-        "String": "text/css+css",
-        "MainType": "text",
-        "SubType": "css",
-        "Suffix": "css",
-        "Delimiter": "."
+        "type": "text/css",
+        "string": "text/css+css",
+        "mainType": "text",
+        "subType": "css",
+        "suffix": "css",
+        "delimiter": "."
       },
       {
-        "Type": "text/csv",
-        "String": "text/csv+csv",
-        "MainType": "text",
-        "SubType": "csv",
-        "Suffix": "csv",
-        "Delimiter": "."
+        "type": "text/csv",
+        "string": "text/csv+csv",
+        "mainType": "text",
+        "subType": "csv",
+        "suffix": "csv",
+        "delimiter": "."
       },
       {
-        "Type": "text/html",
-        "String": "text/html+html",
-        "MainType": "text",
-        "SubType": "html",
-        "Suffix": "html",
-        "Delimiter": "."
+        "type": "text/html",
+        "string": "text/html+html",
+        "mainType": "text",
+        "subType": "html",
+        "suffix": "html",
+        "delimiter": "."
       },
       {
-        "Type": "text/plain",
-        "String": "text/plain+txt",
-        "MainType": "text",
-        "SubType": "plain",
-        "Suffix": "txt",
-        "Delimiter": "."
+        "type": "text/plain",
+        "string": "text/plain+txt",
+        "mainType": "text",
+        "subType": "plain",
+        "suffix": "txt",
+        "delimiter": "."
       }
     ]
   },
@@ -79,87 +79,143 @@
     "formats": [
       {
         "MediaType": "text/html+html",
-        "Name": "AMP",
-        "Path": "amp",
-        "BaseName": "index",
-        "Rel": "amphtml",
-        "Protocol": "",
-        "IsPlainText": false,
-        "IsHTML": true,
-        "NoUgly": false,
-        "NotAlternative": false
+        "name": "AMP",
+        "mediaType": {
+          "type": "text/html",
+          "string": "text/html+html",
+          "mainType": "text",
+          "subType": "html",
+          "suffix": "html",
+          "delimiter": "."
+        },
+        "path": "amp",
+        "baseName": "index",
+        "rel": "amphtml",
+        "protocol": "",
+        "isPlainText": false,
+        "isHTML": true,
+        "noUgly": false,
+        "notAlternative": false
       },
       {
         "MediaType": "text/css+css",
-        "Name": "CSS",
-        "Path": "",
-        "BaseName": "styles",
-        "Rel": "stylesheet",
-        "Protocol": "",
-        "IsPlainText": true,
-        "IsHTML": false,
-        "NoUgly": false,
-        "NotAlternative": true
+        "name": "CSS",
+        "mediaType": {
+          "type": "text/css",
+          "string": "text/css+css",
+          "mainType": "text",
+          "subType": "css",
+          "suffix": "css",
+          "delimiter": "."
+        },
+        "path": "",
+        "baseName": "styles",
+        "rel": "stylesheet",
+        "protocol": "",
+        "isPlainText": true,
+        "isHTML": false,
+        "noUgly": false,
+        "notAlternative": true
       },
       {
         "MediaType": "text/csv+csv",
-        "Name": "CSV",
-        "Path": "",
-        "BaseName": "index",
-        "Rel": "alternate",
-        "Protocol": "",
-        "IsPlainText": true,
-        "IsHTML": false,
-        "NoUgly": false,
-        "NotAlternative": false
+        "name": "CSV",
+        "mediaType": {
+          "type": "text/csv",
+          "string": "text/csv+csv",
+          "mainType": "text",
+          "subType": "csv",
+          "suffix": "csv",
+          "delimiter": "."
+        },
+        "path": "",
+        "baseName": "index",
+        "rel": "alternate",
+        "protocol": "",
+        "isPlainText": true,
+        "isHTML": false,
+        "noUgly": false,
+        "notAlternative": false
       },
       {
         "MediaType": "text/calendar+ics",
-        "Name": "Calendar",
-        "Path": "",
-        "BaseName": "index",
-        "Rel": "alternate",
-        "Protocol": "webcal://",
-        "IsPlainText": true,
-        "IsHTML": false,
-        "NoUgly": false,
-        "NotAlternative": false
+        "name": "Calendar",
+        "mediaType": {
+          "type": "text/calendar",
+          "string": "text/calendar+ics",
+          "mainType": "text",
+          "subType": "calendar",
+          "suffix": "ics",
+          "delimiter": "."
+        },
+        "path": "",
+        "baseName": "index",
+        "rel": "alternate",
+        "protocol": "webcal://",
+        "isPlainText": true,
+        "isHTML": false,
+        "noUgly": false,
+        "notAlternative": false
       },
       {
         "MediaType": "text/html+html",
-        "Name": "HTML",
-        "Path": "",
-        "BaseName": "index",
-        "Rel": "canonical",
-        "Protocol": "",
-        "IsPlainText": false,
-        "IsHTML": true,
-        "NoUgly": false,
-        "NotAlternative": false
+        "name": "HTML",
+        "mediaType": {
+          "type": "text/html",
+          "string": "text/html+html",
+          "mainType": "text",
+          "subType": "html",
+          "suffix": "html",
+          "delimiter": "."
+        },
+        "path": "",
+        "baseName": "index",
+        "rel": "canonical",
+        "protocol": "",
+        "isPlainText": false,
+        "isHTML": true,
+        "noUgly": false,
+        "notAlternative": false
       },
       {
         "MediaType": "application/json+json",
-        "Name": "JSON",
-        "Path": "",
-        "BaseName": "index",
-        "Rel": "alternate",
-        "Protocol": "",
-        "IsPlainText": true,
-        "IsHTML": false,
-        "NoUgly": false,
-        "NotAlternative": false
+        "name": "JSON",
+        "mediaType": {
+          "type": "application/json",
+          "string": "application/json+json",
+          "mainType": "application",
+          "subType": "json",
+          "suffix": "json",
+          "delimiter": "."
+        },
+        "path": "",
+        "baseName": "index",
+        "rel": "alternate",
+        "protocol": "",
+        "isPlainText": true,
+        "isHTML": false,
+        "noUgly": false,
+        "notAlternative": false
       },
       {
         "MediaType": "application/rss+xml",
-        "Name": "RSS",
-        "Path": "",
-        "BaseName": "index",
-        "Rel": "alternate",
-        "Protocol": "",
-        "IsPlainText": false,
-        "IsHTML": false,
-        "NoUgly": true,
-        "NotAlternative": false
+        "name": "RSS",
+        "mediaType": {
+          "type": "application/rss",
+          "string": "application/rss+xml",
+          "mainType": "application",
+          "subType": "rss",
+          "suffix": "xml",
+          "delimiter": "."
+        },
+        "path": "",
+        "baseName": "index",
+        "rel": "alternate",
+        "protocol": "",
+        "isPlainText": false,
+        "isHTML": false,
+        "noUgly": true,
+        "notAlternative": false
       }
     ],
     "layouts": [
@@ -191,6 +247,16 @@
           "layouts/_default/list.amp.html",
           "layouts/_default/list.fr.html",
           "layouts/_default/list.html"
+        ]
+      },
+      {
+        "Example": "RSS home, no theme.",
+        "OutputFormat": "RSS",
+        "Suffix": "xml",
+        "Template Lookup Order": [
+          "layouts/rss.xml",
+          "layouts/_default/rss.xml",
+          "layouts/_internal/_default/rss.xml"
         ]
       },
       {
@@ -286,6 +352,21 @@
   "tpl": {
     "funcs": {
       "cast": {
+        "ToFloat": {
+          "Description": "ToFloat converts the given value to a float.",
+          "Args": [
+            "v"
+          ],
+          "Aliases": [
+            "float"
+          ],
+          "Examples": [
+            [
+              "{{ \"1234\" | float | printf \"%T\" }}",
+              "float64"
+            ]
+          ]
+        },
         "ToInt": {
           "Description": "ToInt converts the given value to an int.",
           "Args": [
@@ -318,6 +399,23 @@
         }
       },
       "compare": {
+        "Conditional": {
+          "Description": "Conditional can be used as a ternary operator.\nIt returns a if condition, else b.",
+          "Args": [
+            "condition",
+            "a",
+            "b"
+          ],
+          "Aliases": [
+            "cond"
+          ],
+          "Examples": [
+            [
+              "{{ cond (eq (add 2 2) 4) \"2+2 is 4\" \"what?\" | safeHTML }}",
+              "2+2 is 4"
+            ]
+          ]
+        },
         "Default": {
           "Description": "Default checks whether a given value is set and returns a default value if it\nis not.  \"Set\" in this context means non-zero for numeric types and times;\nnon-zero length for strings, arrays, slices, and maps;\nany boolean or struct value; or non-nil for any other types.",
           "Args": [
@@ -537,6 +635,22 @@
             "isset"
           ],
           "Examples": []
+        },
+        "KeyVals": {
+          "Description": "KeyVals creates a key and values wrapper.",
+          "Args": [
+            "key",
+            "vals"
+          ],
+          "Aliases": [
+            "keyVals"
+          ],
+          "Examples": [
+            [
+              "{{ keyVals \"key\" \"a\" \"b\" }}",
+              "key: [a b]"
+            ]
+          ]
         },
         "Last": {
           "Description": "Last returns the last N items in a rangeable list.",
@@ -789,8 +903,24 @@
         }
       },
       "fmt": {
-        "Print": {
+        "Errorf": {
           "Description": "",
+          "Args": [
+            "format",
+            "a"
+          ],
+          "Aliases": [
+            "errorf"
+          ],
+          "Examples": [
+            [
+              "{{ errorf \"%s.\" \"failed\" }}",
+              "failed."
+            ]
+          ]
+        },
+        "Print": {
+          "Description": "Print returns string representation of the passed arguments.",
           "Args": [
             "a"
           ],
@@ -805,7 +935,7 @@
           ]
         },
         "Printf": {
-          "Description": "",
+          "Description": "Printf returns a formatted string representation of the passed arguments.",
           "Args": [
             "format",
             "a"
@@ -821,7 +951,7 @@
           ]
         },
         "Println": {
-          "Description": "",
+          "Description": "Println returns string representation of the passed arguments ending with a newline.",
           "Args": [
             "a"
           ],
@@ -954,7 +1084,7 @@
       },
       "math": {
         "Add": {
-          "Description": "",
+          "Description": "Add adds two numbers.",
           "Args": [
             "a",
             "b"
@@ -969,8 +1099,21 @@
             ]
           ]
         },
+        "Ceil": {
+          "Description": "Ceil returns the least integer value greater than or equal to x.",
+          "Args": [
+            "x"
+          ],
+          "Aliases": null,
+          "Examples": [
+            [
+              "{{math.Ceil 2.1}}",
+              "3"
+            ]
+          ]
+        },
         "Div": {
-          "Description": "",
+          "Description": "Div divides two numbers.",
           "Args": [
             "a",
             "b"
@@ -985,8 +1128,21 @@
             ]
           ]
         },
+        "Floor": {
+          "Description": "Floor returns the greatest integer value less than or equal to x.",
+          "Args": [
+            "x"
+          ],
+          "Aliases": null,
+          "Examples": [
+            [
+              "{{math.Floor 1.9}}",
+              "1"
+            ]
+          ]
+        },
         "Log": {
-          "Description": "",
+          "Description": "Log returns the natural logarithm of a number.",
           "Args": [
             "a"
           ],
@@ -1031,7 +1187,7 @@
           ]
         },
         "Mul": {
-          "Description": "",
+          "Description": "Mul multiplies two numbers.",
           "Args": [
             "a",
             "b"
@@ -1046,8 +1202,21 @@
             ]
           ]
         },
+        "Round": {
+          "Description": "Round returns the nearest integer, rounding half away from zero.",
+          "Args": [
+            "x"
+          ],
+          "Aliases": null,
+          "Examples": [
+            [
+              "{{math.Round 1.5}}",
+              "2"
+            ]
+          ]
+        },
         "Sub": {
-          "Description": "",
+          "Description": "Sub subtracts two numbers.",
           "Args": [
             "a",
             "b"
@@ -1064,6 +1233,21 @@
         }
       },
       "os": {
+        "FileExists": {
+          "Description": "FileExists checks whether a file exists under the given path.",
+          "Args": [
+            "i"
+          ],
+          "Aliases": [
+            "fileExists"
+          ],
+          "Examples": [
+            [
+              "{{ fileExists \"foo.txt\" }}",
+              "false"
+            ]
+          ]
+        },
         "Getenv": {
           "Description": "Getenv retrieves the value of the environment variable named by the key.\nIt returns the value, which will be empty if the variable is not present.",
           "Args": [
@@ -1090,7 +1274,7 @@
           ]
         },
         "ReadFile": {
-          "Description": "ReadFilereads the file named by filename relative to the configured\nWorkingDir.  It returns the contents as a string.  There is a upper size\nlimit set at 1 megabytes.",
+          "Description": "ReadFile reads the file named by filename relative to the configured WorkingDir.\nIt returns the contents as a string.\nThere is an upper size limit set at 1 megabytes.",
           "Args": [
             "i"
           ],
@@ -1121,6 +1305,18 @@
               "\u003ctitle\u003eHugo Rocks!\u003c/title\u003e"
             ]
           ]
+        },
+        "IncludeCached": {
+          "Description": "IncludeCached executes and caches partial templates.  An optional variant\nstring parameter (a string slice actually, but be only use a variadic\nargument to make it optional) can be passed so that a given partial can have\nmultiple uses. The cache is created with name+variant as the key.",
+          "Args": [
+            "name",
+            "context",
+            "variant"
+          ],
+          "Aliases": [
+            "partialCached"
+          ],
+          "Examples": []
         }
       },
       "safe": {
@@ -1403,6 +1599,10 @@
             [
               "{{title \"Bat man\"}}",
               "Bat Man"
+            ],
+            [
+              "{{title \"somewhere over the rainbow\"}}",
+              "Somewhere Over the Rainbow"
             ]
           ]
         },
@@ -1452,20 +1652,72 @@
             ]
           ]
         },
-        "TrimPrefix": {
-          "Description": "",
-          "Args": null,
+        "TrimLeft": {
+          "Description": "TrimLeft returns a slice of the string s with all leading characters\ncontained in cutset removed.",
+          "Args": [
+            "cutset",
+            "s"
+          ],
           "Aliases": null,
-          "Examples": null
+          "Examples": [
+            [
+              "{{ \"aabbaa\" | strings.TrimLeft \"a\" }}",
+              "bbaa"
+            ]
+          ]
+        },
+        "TrimPrefix": {
+          "Description": "TrimPrefix returns s without the provided leading prefix string. If s doesn't\nstart with prefix, s is returned unchanged.",
+          "Args": [
+            "prefix",
+            "s"
+          ],
+          "Aliases": null,
+          "Examples": [
+            [
+              "{{ \"aabbaa\" | strings.TrimPrefix \"a\" }}",
+              "abbaa"
+            ],
+            [
+              "{{ \"aabbaa\" | strings.TrimPrefix \"aa\" }}",
+              "bbaa"
+            ]
+          ]
+        },
+        "TrimRight": {
+          "Description": "TrimRight returns a slice of the string s with all trailing characters\ncontained in cutset removed.",
+          "Args": [
+            "cutset",
+            "s"
+          ],
+          "Aliases": null,
+          "Examples": [
+            [
+              "{{ \"aabbaa\" | strings.TrimRight \"a\" }}",
+              "aabb"
+            ]
+          ]
         },
         "TrimSuffix": {
-          "Description": "",
-          "Args": null,
+          "Description": "TrimSuffix returns s without the provided trailing suffix string. If s\ndoesn't end with suffix, s is returned unchanged.",
+          "Args": [
+            "suffix",
+            "s"
+          ],
           "Aliases": null,
-          "Examples": null
+          "Examples": [
+            [
+              "{{ \"aabbaa\" | strings.TrimSuffix \"a\" }}",
+              "aabba"
+            ],
+            [
+              "{{ \"aabbaa\" | strings.TrimSuffix \"aa\" }}",
+              "aabb"
+            ]
+          ]
         },
         "Truncate": {
-          "Description": "",
+          "Description": "Truncate truncates a given string to the specified length.",
           "Args": [
             "a",
             "options"
@@ -1499,6 +1751,22 @@
             ]
           ]
         },
+        "Duration": {
+          "Description": "Duration converts the given number to a time.Duration.\nUnit is one of nanosecond/ns, microsecond/us/µs, millisecond/ms, second/s, minute/m or hour/h.",
+          "Args": [
+            "unit",
+            "number"
+          ],
+          "Aliases": [
+            "duration"
+          ],
+          "Examples": [
+            [
+              "{{ mul 60 60 | duration \"second\" }}",
+              "1h0m0s"
+            ]
+          ]
+        },
         "Format": {
           "Description": "Format converts the textual representation of the datetime string into\nthe other form or returns it of the time.Time value. These are formatted\nwith the layout string",
           "Args": [
@@ -1522,6 +1790,19 @@
             "now"
           ],
           "Examples": []
+        },
+        "ParseDuration": {
+          "Description": "ParseDuration parses a duration string.\nA duration string is a possibly signed sequence of\ndecimal numbers, each with optional fraction and a unit suffix,\nsuch as \"300ms\", \"-1.5h\" or \"2h45m\".\nValid time units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\".\nSee https://golang.org/pkg/time/#ParseDuration",
+          "Args": [
+            "in"
+          ],
+          "Aliases": null,
+          "Examples": [
+            [
+              "{{ \"1h12m10s\" | time.ParseDuration }}",
+              "1h12m10s"
+            ]
+          ]
         }
       },
       "transform": {
@@ -1654,6 +1935,12 @@
           ],
           "Examples": []
         },
+        "Parse": {
+          "Description": "",
+          "Args": null,
+          "Aliases": null,
+          "Examples": null
+        },
         "Ref": {
           "Description": "Ref returns the absolute URL path to a given content item.",
           "Args": [
@@ -1697,7 +1984,7 @@
           "Examples": []
         },
         "URLize": {
-          "Description": "",
+          "Description": "URLize returns the given argument formatted as URL.",
           "Args": [
             "a"
           ],

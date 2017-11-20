@@ -6,7 +6,7 @@ date: 2017-03-06
 publishdate: 2017-03-06
 lastmod: 2017-03-06
 categories: [templates]
-#tags: [internal, analytics,]
+keywords: [internal, analytics,]
 menu:
   docs:
     parent: "templates"
@@ -118,18 +118,16 @@ You can then render your custom Disqus partial template as follows:
 {{ partial "disqus.html" . }}
 ```
 
-```
-_internal/_default/robots.txt
-_internal/_default/rss.xml
-_internal/_default/sitemap.xml
-_internal/_default/sitemapindex.xml
+## The Internal Templates
 
-_internal/disqus.html
-_internal/google_news.html
-_internal/google_analytics.html
-_internal/google_analytics_async.html
-_internal/opengraph.html
-_internal/pagination.html
-_internal/schema.html
-_internal/twitter_cards.html
-```
+* `_internal/disqus.html`
+* `_internal/google_news.html`
+* `_internal/google_analytics.html`
+* `_internal/google_analytics_async.html`
+* `_internal/opengraph.html`
+* `_internal/pagination.html`
+* `_internal/schema.html`
+* `_internal/twitter_cards.html`
+
+[disqus]: https://disqus.com
+[disqussignup]: https://disqus.com/profile/signup/

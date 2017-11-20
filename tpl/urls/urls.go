@@ -15,7 +15,9 @@ package urls
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
+	"net/url"
 
 	"github.com/gohugoio/hugo/deps"
 	"github.com/spf13/cast"
@@ -24,13 +26,15 @@ import (
 // New returns a new instance of the urls-namespaced template functions.
 func New(deps *deps.Deps) *Namespace {
 	return &Namespace{
-		deps: deps,
+		deps:      deps,
+		multihost: deps.Cfg.GetBool("multihost"),
 	}
 }
 
 // Namespace provides template functions for the "urls" namespace.
 type Namespace struct {
-	deps *deps.Deps
+	deps      *deps.Deps
+	multihost bool
 }
 
 // AbsURL takes a given string and converts it to an absolute URL.
@@ -41,6 +45,17 @@ func (ns *Namespace) AbsURL(a interface{}) (template.HTML, error) {
 	}
 
 	return template.HTML(ns.deps.PathSpec.AbsURL(s, false)), nil
+}
+
+// Parse parses rawurl into a URL structure. The rawurl may be relative or
+// absolute.
+func (ns *Namespace) Parse(rawurl interface{}) (*url.URL, error) {
+	s, err := cast.ToStringE(rawurl)
+	if err != nil {
+		return nil, fmt.Errorf("Error in Parse: %s", err)
+	}
+
+	return url.Parse(s)
 }
 
 // RelURL takes a given string and prepends the relative path according to a
@@ -54,6 +69,7 @@ func (ns *Namespace) RelURL(a interface{}) (template.HTML, error) {
 	return template.HTML(ns.deps.PathSpec.RelURL(s, false)), nil
 }
 
+// URLize returns the given argument formatted as URL.
 func (ns *Namespace) URLize(a interface{}) (string, error) {
 	s, err := cast.ToStringE(a)
 	if err != nil {
@@ -95,7 +111,7 @@ func (ns *Namespace) RelLangURL(a interface{}) (template.HTML, error) {
 		return "", err
 	}
 
-	return template.HTML(ns.deps.PathSpec.RelURL(s, true)), nil
+	return template.HTML(ns.deps.PathSpec.RelURL(s, !ns.multihost)), nil
 }
 
 // AbsLangURL takes a given string and converts it to an absolute URL according
@@ -107,5 +123,5 @@ func (ns *Namespace) AbsLangURL(a interface{}) (template.HTML, error) {
 		return "", err
 	}
 
-	return template.HTML(ns.deps.PathSpec.AbsURL(s, true)), nil
+	return template.HTML(ns.deps.PathSpec.AbsURL(s, !ns.multihost)), nil
 }

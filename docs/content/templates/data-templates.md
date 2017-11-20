@@ -6,7 +6,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-03-12
 categories: [templates]
-#tags: [data,dynamic,csv,json,toml,yaml]
+keywords: [data,dynamic,csv,json,toml,yaml]
 menu:
   docs:
     parent: "templates"
@@ -22,11 +22,13 @@ toc: true
 
 Hugo supports loading data from YAML, JSON, and TOML files located in the `data` directory in the root of your Hugo project.
 
+{{< youtube FyPgSuwIMWQ >}}
+
 ## The Data Folder
 
 The `data` folder is where you can store additional data for Hugo to use when generating your site. Data files aren't used to generate standalone pages; rather, they're meant to be supplemental to content files. This feature can extend the content in case your front matter fields grow out of control. Or perhaps you want to show a larger dataset in a template (see example below). In both cases, it's a good idea to outsource the data in their own files.
 
-These files must be YAML, JSON, or TOML files (using the `.yml`, `.yaml`, `.json`, or `toml` extension). The data will be accessible as a `map` in the `.Site.Data` variable.
+These files must be YAML, JSON, or TOML files (using the `.yml`, `.yaml`, `.json`, or `.toml` extension). The data will be accessible as a `map` in the `.Site.Data` variable.
 
 ## Data Files in Themes
 
@@ -240,7 +242,7 @@ If you change any local file and the LiveReload is triggered, Hugo will read the
 [config]: /getting-started/configuration/
 [csv]: https://tools.ietf.org/html/rfc4180
 [customize]: /themes/customizing/
-[json]: /documents/ecma-404-json-spec.pdf
+[json]: https://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf "Specification for JSON, JavaScript Object Notation"
 [LiveReload]: /getting-started/usage/#livereload
 [lookup]: /templates/lookup-order/
 [markdownify]: /functions/markdownify/

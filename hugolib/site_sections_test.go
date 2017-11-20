@@ -149,6 +149,11 @@ PAG|{{ .Title }}|{{ $sect.InSection . }}
 			d := p.s.getPage(KindSection, "empty2", "b", "c", "d")
 			assert.NotNil(d)
 			assert.Equal("T41_-1", d.Title)
+
+			assert.False(c.Eq(d))
+			assert.True(c.Eq(c))
+			assert.False(c.Eq("asdf"))
+
 		}},
 		{"empty3", func(p *Page) {
 			// b,c,d with regular page in b

@@ -6,7 +6,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-02-01
 categories: [contribute]
-#tags: [dev,open source]
+keywords: [dev,open source]
 authors: [digitalcraftsman]
 menu:
   docs:
@@ -137,6 +137,12 @@ So, let's clone that master repository:
 
 ```
 go get -v -u github.com/gohugoio/hugo
+```
+
+Hugo relies on [Testify](https://github.com/stretchr/testify) for testing Go code. If you don't already have it, get the Testify testing tools:
+
+```
+go get github.com/stretchr/testify
 ```
 
 ### Fork the repository

@@ -6,7 +6,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-02-01
 categories: [templates]
-#tags: [taxonomies,metadata,front matter,terms]
+keywords: [taxonomies,metadata,front matter,terms]
 menu:
   docs:
     parent: "templates"
@@ -25,8 +25,8 @@ Hugo includes support for user-defined groupings of content called **taxonomies*
 
 Hugo provides multiple ways to use taxonomies throughout your project templates:
 
-* Order the way the terms for a taxonomy are displayed in a [taxonomy terms template](#taxonomy-terms-template)
 * Order the way content associated with a taxonomy term is displayed in a [taxonomy list template](#taxonomy-list-template)
+* Order the way the terms for a taxonomy are displayed in a [taxonomy terms template](#taxonomy-terms-template)
 * List a single content's taxonomy terms within a [single page template][]
 
 ## Taxonomy List Templates
@@ -117,6 +117,21 @@ type WeightedPages []WeightedPage
 .Pages
 : Returns a slice of pages, which then can be ordered using any of the [list methods][renderlists].
 
+## Displaying custom metadata in Taxonomy Terms Templates
+
+If you need to display custom metadata for each taxonomy term, you will need to create a page for that term at `/content/<TAXONOMY>/<TERM>/_index.md` and add your metadata in it's front matter, [as explained in the taxonomies documentation](/content-management/taxonomies/#add-custom-meta-data-to-a-taxonomy-term). Based on the Actors taxonomy example shown there, within your taxonomy terms template, you may access your custom fields by iterating through the variable `.Data.Pages` as such:
+
+```
+<ul>
+  {{ range .Data.Pages }}
+     <li>
+       <a href="{{ .Permalink }}">{{ .Title }}</a>
+       {{ .Params.wikipedia }}
+     </li>
+  {{ end }}
+</ul>
+```
+
 <!-- Begin /taxonomies/ordering/ -->
 
 ## Order Taxonomies
@@ -128,7 +143,7 @@ Taxonomies can be ordered by either alphabetical key or by the number of content
 ```
 <ul>
   {{ $data := .Data }}
-  {{ range $key, $value := .Data.Taxonomy.Alphabetical }}
+  {{ range $key, $value := .Data.Terms.Alphabetical }}
   <li><a href="{{ $.Site.LanguagePrefix }}/{{ $data.Plural }}/{{ $value.Name | urlize }}"> {{ $value.Name }} </a> {{ $value.Count }} </li>
   {{ end }}
 </ul>
@@ -139,7 +154,7 @@ Taxonomies can be ordered by either alphabetical key or by the number of content
 ```
 <ul>
   {{ $data := .Data }}
-  {{ range $key, $value := .Data.Taxonomy.ByCount }}
+  {{ range $key, $value := .Data.Terms.ByCount }}
   <li><a href="{{ $.Site.LanguagePrefix }}/{{ $data.Plural }}/{{ $value.Name | urlize }}"> {{ $value.Name }} </a> {{ $value.Count }} </li>
   {{ end }}
 </ul>

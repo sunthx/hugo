@@ -14,8 +14,13 @@
 package hugolib
 
 import (
+	"errors"
 	"fmt"
 
+	"io"
+	"strings"
+
+	"github.com/gohugoio/hugo/config"
 	"github.com/gohugoio/hugo/helpers"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
@@ -29,10 +34,10 @@ func LoadConfig(fs afero.Fs, relativeSourcePath, configFilename string) (*viper.
 	if relativeSourcePath == "" {
 		relativeSourcePath = "."
 	}
-
+	configFilenames := strings.Split(configFilename, ",")
 	v.AutomaticEnv()
 	v.SetEnvPrefix("hugo")
-	v.SetConfigFile(configFilename)
+	v.SetConfigFile(configFilenames[0])
 	// See https://github.com/spf13/viper/issues/73#issuecomment-126970794
 	if relativeSourcePath == "" {
 		v.AddConfigPath(".")
@@ -45,6 +50,16 @@ func LoadConfig(fs afero.Fs, relativeSourcePath, configFilename string) (*viper.
 			return nil, err
 		}
 		return nil, fmt.Errorf("Unable to locate Config file. Perhaps you need to create a new site.\n       Run `hugo help new` for details. (%s)\n", err)
+	}
+	for _, configFile := range configFilenames[1:] {
+		var r io.Reader
+		var err error
+		if r, err = fs.Open(configFile); err != nil {
+			return nil, fmt.Errorf("Unable to open Config file.\n (%s)\n", err)
+		}
+		if err = v.MergeConfig(r); err != nil {
+			return nil, fmt.Errorf("Unable to parse/merge Config file (%s).\n (%s)\n", configFile, err)
+		}
 	}
 
 	v.RegisterAlias("indexes", "taxonomies")
@@ -67,14 +82,89 @@ func LoadConfig(fs afero.Fs, relativeSourcePath, configFilename string) (*viper.
 		helpers.Deprecated("site config", "disableRobotsTXT", "Use disableKinds= [\"robotsTXT\"]", false)
 	}
 
-	loadDefaultSettingsFor(v)
+	if err := loadDefaultSettingsFor(v); err != nil {
+		return v, err
+	}
 
 	return v, nil
 }
 
-func loadDefaultSettingsFor(v *viper.Viper) {
+func loadLanguageSettings(cfg config.Provider, oldLangs helpers.Languages) error {
+	multilingual := cfg.GetStringMap("languages")
+	var (
+		langs helpers.Languages
+		err   error
+	)
 
-	c := helpers.NewContentSpec(v)
+	if len(multilingual) == 0 {
+		langs = append(langs, helpers.NewDefaultLanguage(cfg))
+	} else {
+		langs, err = toSortedLanguages(cfg, multilingual)
+		if err != nil {
+			return fmt.Errorf("Failed to parse multilingual config: %s", err)
+		}
+	}
+
+	if oldLangs != nil {
+		// When in multihost mode, the languages are mapped to a server, so
+		// some structural language changes will need a restart of the dev server.
+		// The validation below isn't complete, but should cover the most
+		// important cases.
+		var invalid bool
+		if langs.IsMultihost() != oldLangs.IsMultihost() {
+			invalid = true
+		} else {
+			if langs.IsMultihost() && len(langs) != len(oldLangs) {
+				invalid = true
+			}
+		}
+
+		if invalid {
+			return errors.New("language change needing a server restart detected")
+		}
+
+		if langs.IsMultihost() {
+			// We need to transfer any server baseURL to the new language
+			for i, ol := range oldLangs {
+				nl := langs[i]
+				nl.Set("baseURL", ol.GetString("baseURL"))
+			}
+		}
+	}
+
+	cfg.Set("languagesSorted", langs)
+	cfg.Set("multilingual", len(langs) > 1)
+
+	// The baseURL may be provided at the language level. If that is true,
+	// then every language must have a baseURL. In this case we always render
+	// to a language sub folder, which is then stripped from all the Permalink URLs etc.
+	var baseURLFromLang bool
+
+	for _, l := range langs {
+		burl := l.GetLocal("baseURL")
+		if baseURLFromLang && burl == nil {
+			return errors.New("baseURL must be set on all or none of the languages")
+		}
+
+		if burl != nil {
+			baseURLFromLang = true
+		}
+	}
+
+	if baseURLFromLang {
+		cfg.Set("defaultContentLanguageInSubdir", true)
+		cfg.Set("multihost", true)
+	}
+
+	return nil
+}
+
+func loadDefaultSettingsFor(v *viper.Viper) error {
+
+	c, err := helpers.NewContentSpec(v)
+	if err != nil {
+		return err
+	}
 
 	v.SetDefault("cleanDestinationDir", false)
 	v.SetDefault("watch", false)
@@ -101,12 +191,14 @@ func loadDefaultSettingsFor(v *viper.Viper) {
 	v.SetDefault("canonifyURLs", false)
 	v.SetDefault("relativeURLs", false)
 	v.SetDefault("removePathAccents", false)
+	v.SetDefault("titleCaseStyle", "AP")
 	v.SetDefault("taxonomies", map[string]string{"tag": "tags", "category": "categories"})
 	v.SetDefault("permalinks", make(PermalinkOverrides, 0))
 	v.SetDefault("sitemap", Sitemap{Priority: -1, Filename: "sitemap.xml"})
 	v.SetDefault("pygmentsStyle", "monokai")
 	v.SetDefault("pygmentsUseClasses", false)
 	v.SetDefault("pygmentsCodeFences", false)
+	v.SetDefault("pygmentsUseClassic", false)
 	v.SetDefault("pygmentsOptions", "")
 	v.SetDefault("disableLiveReload", false)
 	v.SetDefault("pluralizeListTitles", true)
@@ -117,6 +209,7 @@ func loadDefaultSettingsFor(v *viper.Viper) {
 	v.SetDefault("newContentEditor", "")
 	v.SetDefault("paginate", 10)
 	v.SetDefault("paginatePath", "page")
+	v.SetDefault("summaryLength", 70)
 	v.SetDefault("blackfriday", c.NewBlackfriday())
 	v.SetDefault("rSSUri", "index.xml")
 	v.SetDefault("rssLimit", -1)
@@ -132,4 +225,8 @@ func loadDefaultSettingsFor(v *viper.Viper) {
 	v.SetDefault("enableGitInfo", false)
 	v.SetDefault("ignoreFiles", make([]string, 0))
 	v.SetDefault("disableAliases", false)
+	v.SetDefault("debug", false)
+	v.SetDefault("disableFastRender", false)
+
+	return loadLanguageSettings(v, nil)
 }

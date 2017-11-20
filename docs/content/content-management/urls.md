@@ -5,7 +5,7 @@ description: Hugo supports permalinks, aliases, link canonicalization, and multi
 date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-03-09
-#tags: [aliases,redirects,permalinks,urls]
+keywords: [aliases,redirects,permalinks,urls]
 categories: [content management]
 menu:
   docs:
@@ -24,7 +24,7 @@ The default Hugo target directory for your built website is `public/`. However, 
 The `permalinks` option in your [site configuration][config] allows you to adjust the directory paths (i.e., the URLs) on a per-section basis. This will change where the files are written to and will change the page's internal "canonical" location, such that template references to `.RelPermalink` will honor the adjustments made as a result of the mappings in this option.
 
 {{% note "Default Publish and Content Folders" %}}
-These examples use the default values for `publishDir` and `contentDir`; i.e., `publish` and `content`, respectively. You can override the default values in your [site's `config` file](/getting-started/configuration/).
+These examples use the default values for `publishDir` and `contentDir`; i.e., `public` and `content`, respectively. You can override the default values in your [site's `config` file](/getting-started/configuration/).
 {{% /note %}}
 
 For example, if one of your [sections][] is called `post` and you want to adjust the canonical path to be hierarchical based on the year, month, and post title, you could set up the following configurations in YAML and TOML, respectively.
@@ -43,7 +43,9 @@ permalinks:
   post = "/:year/:month/:title/"
 {{< /code >}}
 
-Only the content under `post/` will have the new URL structure. For example, the file `content/post/sample-entry.md` with `date: 2017-02-27T19:20:00-05:00` in its front matter will render to `public/2017/02/sample-entry/index.html` at build time and therefore be reachable at `http://example.com/2013/11/sample-entry/`.
+Only the content under `post/` will have the new URL structure. For example, the file `content/post/sample-entry.md` with `date: 2017-02-27T19:20:00-05:00` in its front matter will render to `public/2017/02/sample-entry/index.html` at build time and therefore be reachable at `https://example.com/2017/02/sample-entry/`.
+
+You can also configure permalinks of taxonomies with the same syntax, by using the plural form of the taxonomy instead of the section. You will probably only want to use the configuration values `:slug` or `:title`.
 
 ### Permalink Configuration Values
 
@@ -72,6 +74,9 @@ The following is a list of values that can be used in a `permalink` definition i
 
 `:section`
 : the content's section
+
+`:sections`
+: the content's sections hierarchy
 
 `:title`
 : the content's title
@@ -147,16 +152,16 @@ Assuming a `baseURL` of `example.com`, the contents of the auto-generated alias 
 <!DOCTYPE html>
 <html>
   <head>
-    <title>http://example.com/posts/my-intended-url</title>
-    <link rel="canonical" href="http://example.com/posts/my-intended-url"/>
-    <meta name=\"robots\" content=\"noindex\">
+    <title>https://example.com/posts/my-intended-url</title>
+    <link rel="canonical" href="https://example.com/posts/my-intended-url"/>
+    <meta name="robots" content="noindex">
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-    <meta http-equiv="refresh" content="0; url=http://example.com/posts/my-intended-url"/>
+    <meta http-equiv="refresh" content="0; url=https://example.com/posts/my-intended-url"/>
   </head>
 </html>
 ```
 
-The `http-equiv="refresh"` line is what performs the redirect, in 0 seconds in this case. If an end user of your website goes to `https://example.com/posts/my-old-url`, they will now be automatically redirected to the newer, correct URL. The addition of `<meta name=\"robots\" content=\"noindex\">` lets search engine bots know they they should not crawl and index your new alias page.
+The `http-equiv="refresh"` line is what performs the redirect, in 0 seconds in this case. If an end user of your website goes to `https://example.com/posts/my-old-url`, they will now be automatically redirected to the newer, correct URL. The addition of `<meta name="robots" content="noindex">` lets search engine bots know they they should not crawl and index your new alias page.
 
 ### Customize 
 You may customize this alias page by creating an `alias.html` template in the
@@ -190,7 +195,7 @@ content/posts/post-1.md
 
 ## Ugly URLs
 
-If you would like to have are often referred to as "ugly URLs" (e.g., example.com/urls.html), set `uglyurls = true` or `uglyurls: true` in your site's `config.toml` or `config.yaml`, respectively. You can also use the `--uglyURLs=true` [flag from the command line][usage] with `hugo` or `hugo server`..
+If you would like to have what are often referred to as "ugly URLs" (e.g., example.com/urls.html), set `uglyurls = true` or `uglyurls: true` in your site's `config.toml` or `config.yaml`, respectively. You can also use the `--uglyURLs=true` [flag from the command line][usage] with `hugo` or `hugo server`..
 
 If you want a specific piece of content to have an exact URL, you can specify this in the [front matter][] under the `url` key. The following are examples of the same content directory and what the eventual URL structure will be when Hugo runs with its default behavior.
 
@@ -200,15 +205,15 @@ See [Content Organization][contentorg] for more details on paths.
 .
 └── content
     └── about
-    |   └── _index.md  // <- http://example.com/about/
+    |   └── _index.md  // <- https://example.com/about/
     ├── post
-    |   ├── firstpost.md   // <- http://example.com/post/firstpost/
+    |   ├── firstpost.md   // <- https://example.com/post/firstpost/
     |   ├── happy
-    |   |   └── ness.md  // <- http://example.com/post/happy/ness/
-    |   └── secondpost.md  // <- http://example.com/post/secondpost/
+    |   |   └── ness.md  // <- https://example.com/post/happy/ness/
+    |   └── secondpost.md  // <- https://example.com/post/secondpost/
     └── quote
-        ├── first.md       // <- http://example.com/quote/first/
-        └── second.md      // <- http://example.com/quote/second/
+        ├── first.md       // <- https://example.com/quote/first/
+        └── second.md      // <- https://example.com/quote/second/
 ```
 
 Here's the same organization run with `hugo --uglyURLs`:
@@ -217,15 +222,15 @@ Here's the same organization run with `hugo --uglyURLs`:
 .
 └── content
     └── about
-    |   └── _index.md  // <- http://example.com/about/index.html
+    |   └── _index.md  // <- https://example.com/about/index.html
     ├── post
-    |   ├── firstpost.md   // <- http://example.com/post/firstpost.html
+    |   ├── firstpost.md   // <- https://example.com/post/firstpost.html
     |   ├── happy
-    |   |   └── ness.md    // <- http://example.com/post/happy/ness.html
-    |   └── secondpost.md  // <- http://example.com/post/secondpost.html
+    |   |   └── ness.md    // <- https://example.com/post/happy/ness.html
+    |   └── secondpost.md  // <- https://example.com/post/secondpost.html
     └── quote
-        ├── first.md       // <- http://example.com/quote/first.html
-        └── second.md      // <- http://example.com/quote/second.html
+        ├── first.md       // <- https://example.com/quote/first.html
+        └── second.md      // <- https://example.com/quote/second.html
 ```
 
 
@@ -233,7 +238,7 @@ Here's the same organization run with `hugo --uglyURLs`:
 
 By default, all relative URLs encountered in the input are left unmodified, e.g. `/css/foo.css` would stay as `/css/foo.css`. The `canonifyURLs` field in your site `config` has a default value of `false`.
 
-By setting `canonifyURLs` to `true`, all relative URLs would instead be *canonicalized* using `baseURL`.  For example, assuming you have `baseURL = https://example.com/`, the relative URL `/css/foo.css` would be turned into the absolute URL `http://example.com/css/foo.css`.
+By setting `canonifyURLs` to `true`, all relative URLs would instead be *canonicalized* using `baseURL`.  For example, assuming you have `baseURL = https://example.com/`, the relative URL `/css/foo.css` would be turned into the absolute URL `https://example.com/css/foo.css`.
 
 Benefits of canonicalization include fixing all URLs to be absolute, which may aid with some parsing tasks. Note, however, that all modern browsers handle this on the client without issue.
 

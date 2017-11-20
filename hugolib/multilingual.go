@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cast"
 )
 
+// Multilingual manages the all languages used in a multilingual site.
 type Multilingual struct {
 	Languages helpers.Languages
 
@@ -35,6 +36,7 @@ type Multilingual struct {
 	langMapInit sync.Once
 }
 
+// Language returns the Language associated with the given string.
 func (ml *Multilingual) Language(lang string) *helpers.Language {
 	ml.langMapInit.Do(func() {
 		ml.langMap = make(map[string]*helpers.Language)
@@ -43,6 +45,14 @@ func (ml *Multilingual) Language(lang string) *helpers.Language {
 		}
 	})
 	return ml.langMap[lang]
+}
+
+func getLanguages(cfg config.Provider) helpers.Languages {
+	if cfg.IsSet("languagesSorted") {
+		return cfg.Get("languagesSorted").(helpers.Languages)
+	}
+
+	return helpers.Languages{helpers.NewDefaultLanguage(cfg)}
 }
 
 func newMultiLingualFromSites(cfg config.Provider, sites ...*Site) (*Multilingual, error) {

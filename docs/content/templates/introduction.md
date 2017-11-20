@@ -7,7 +7,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-02-25
 categories: [templates,fundamentals]
-#tags: [go]
+keywords: [go]
 menu:
   docs:
     parent: "templates"
@@ -24,6 +24,8 @@ The following is only a primer on Go templates. For an in-depth look into Go tem
 {{% /note %}}
 
 Go templates provide an extremely simple template language that adheres to the belief that only the most basic of logic belongs in the template or view layer.
+
+{{< youtube gnJbPO-GFIw >}}
 
 ## Basic Syntax
 
@@ -110,7 +112,7 @@ There are more boolean operators than those listed in the Hugo docs in the [Gola
 When including another template, you will pass to it the data it will be
 able to access. To pass along the current context, please remember to
 include a trailing dot. The templates location will always be starting at
-the `/layout/` directory within Hugo.
+the `/layouts/` directory within Hugo.
 
 ### Template and Partial Examples
 

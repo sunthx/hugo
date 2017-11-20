@@ -6,7 +6,7 @@ date: 2017-01-10
 publishdate: 2017-01-10
 lastmod: 2017-04-06
 categories: [content management]
-#tags: [markdown,asciidoc,mmark,content format]
+keywords: [markdown,asciidoc,mmark,content format]
 menu:
   docs:
     parent: "content-management"
@@ -100,7 +100,7 @@ In the event that you want to only use Mmark in specific files, you can also def
 ---
 title: My Post
 date: 2017-04-01
-markdown: mmark
+markup: mmark
 ---
 ```
 
@@ -214,7 +214,7 @@ Markdown syntax is simple enough to learn in a single sitting. The following are
 * [Markdown Tutorial (Interactive), Garen Torikian][mdtutorial]
 
 [`emojify` function]: /functions/emojify/
-[ascii]: http://asciidoc.org/
+[ascii]: http://asciidoctor.org/
 [bfconfig]: /getting-started/configuration/#configuring-blackfriday-rendering
 [blackfriday]: https://github.com/russross/blackfriday
 [mmark]: https://github.com/miekg/mmark

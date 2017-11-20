@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bep/inflect"
+	"github.com/markbates/inflect"
 	jww "github.com/spf13/jwalterweatherman"
 
 	"github.com/gohugoio/hugo/helpers"
@@ -750,15 +750,6 @@ func TestGroupedPages(t *testing.T) {
 	if bydate[1].Key != "2012-01" {
 		t.Errorf("PageGroup array in unexpected order. Second group key should be '%s', got '%s'", "2012-01", bydate[1].Key)
 	}
-	if bydate[2].Key != "2012-04" {
-		t.Errorf("PageGroup array in unexpected order. Third group key should be '%s', got '%s'", "2012-04", bydate[2].Key)
-	}
-	if bydate[2].Pages[0].Title != "Three" {
-		t.Errorf("PageGroup has an unexpected page. Third group's pages should have '%s', got '%s'", "Three", bydate[2].Pages[0].Title)
-	}
-	if len(bydate[0].Pages) != 2 {
-		t.Errorf("PageGroup has unexpected number of pages. First group should have '%d' pages, got '%d' pages", 2, len(bydate[2].Pages))
-	}
 
 	bypubdate, err := s.RegularPages.GroupByPublishDate("2006")
 	if err != nil {
@@ -938,8 +929,7 @@ func setupLinkingMockSite(t *testing.T) *Site {
 	cfg.Set("pluralizeListTitles", false)
 	cfg.Set("canonifyURLs", false)
 	cfg.Set("blackfriday",
-		map[string]interface{}{
-			"sourceRelativeLinksProjectFolder": "/docs"})
+		map[string]interface{}{})
 	writeSourcesToSource(t, "content", fs, sources...)
 	return buildSingleSite(t, deps.DepsCfg{Fs: fs, Cfg: cfg}, BuildCfg{})
 
@@ -972,135 +962,4 @@ func TestRefLinking(t *testing.T) {
 	}
 
 	// TODO: and then the failure cases.
-}
-
-func TestSourceRelativeLinksing(t *testing.T) {
-	t.Parallel()
-	site := setupLinkingMockSite(t)
-
-	type resultMap map[string]string
-
-	okresults := map[string]resultMap{
-		"index.md": map[string]string{
-			"/docs/rootfile.md": "/rootfile/",
-			"rootfile.md":       "/rootfile/",
-			// See #3396 -- this may potentially be ambiguous (i.e. name conflict with home page).
-			// But the user have chosen so. This index.md patterns is more relevant in /sub-folders.
-			"index.md":                      "/",
-			"level2/2-root.md":              "/level2/2-root/",
-			"/docs/level2/2-root.md":        "/level2/2-root/",
-			"level2/level3/3-root.md":       "/level2/level3/3-root/",
-			"/docs/level2/level3/3-root.md": "/level2/level3/3-root/",
-			"/docs/level2/2-root/":          "/level2/2-root/",
-			"/docs/level2/2-root":           "/level2/2-root/",
-			"/level2/2-root/":               "/level2/2-root/",
-			"/level2/2-root":                "/level2/2-root/",
-		}, "rootfile.md": map[string]string{
-			"/docs/rootfile.md":             "/rootfile/",
-			"rootfile.md":                   "/rootfile/",
-			"level2/2-root.md":              "/level2/2-root/",
-			"/docs/level2/2-root.md":        "/level2/2-root/",
-			"level2/level3/3-root.md":       "/level2/level3/3-root/",
-			"/docs/level2/level3/3-root.md": "/level2/level3/3-root/",
-		}, "level2/2-root.md": map[string]string{
-			"../rootfile.md":                "/rootfile/",
-			"/docs/rootfile.md":             "/rootfile/",
-			"2-root.md":                     "/level2/2-root/",
-			"../level2/2-root.md":           "/level2/2-root/",
-			"./2-root.md":                   "/level2/2-root/",
-			"/docs/level2/2-root.md":        "/level2/2-root/",
-			"level3/3-root.md":              "/level2/level3/3-root/",
-			"../level2/level3/3-root.md":    "/level2/level3/3-root/",
-			"/docs/level2/level3/3-root.md": "/level2/level3/3-root/",
-		}, "level2/index.md": map[string]string{
-			"../rootfile.md":                "/rootfile/",
-			"/docs/rootfile.md":             "/rootfile/",
-			"2-root.md":                     "/level2/2-root/",
-			"../level2/2-root.md":           "/level2/2-root/",
-			"./2-root.md":                   "/level2/2-root/",
-			"/docs/level2/2-root.md":        "/level2/2-root/",
-			"level3/3-root.md":              "/level2/level3/3-root/",
-			"../level2/level3/3-root.md":    "/level2/level3/3-root/",
-			"/docs/level2/level3/3-root.md": "/level2/level3/3-root/",
-		}, "level2/level3/3-root.md": map[string]string{
-			"../../rootfile.md":             "/rootfile/",
-			"/docs/rootfile.md":             "/rootfile/",
-			"../2-root.md":                  "/level2/2-root/",
-			"/docs/level2/2-root.md":        "/level2/2-root/",
-			"3-root.md":                     "/level2/level3/3-root/",
-			"./3-root.md":                   "/level2/level3/3-root/",
-			"/docs/level2/level3/3-root.md": "/level2/level3/3-root/",
-		}, "level2/level3/index.md": map[string]string{
-			"../../rootfile.md":             "/rootfile/",
-			"/docs/rootfile.md":             "/rootfile/",
-			"../2-root.md":                  "/level2/2-root/",
-			"/docs/level2/2-root.md":        "/level2/2-root/",
-			"3-root.md":                     "/level2/level3/3-root/",
-			"./3-root.md":                   "/level2/level3/3-root/",
-			"/docs/level2/level3/3-root.md": "/level2/level3/3-root/",
-		},
-	}
-
-	for currentFile, results := range okresults {
-		currentPage := findPage(site, currentFile)
-		if currentPage == nil {
-			t.Fatalf("failed to find current page in site")
-		}
-		for link, url := range results {
-			if out, err := site.Info.SourceRelativeLink(link, currentPage); err != nil || out != url {
-				t.Errorf("Expected %s to resolve to (%s), got (%s) - error: %s", link, url, out, err)
-			} else {
-				//t.Logf("tested ok %s maps to %s", link, out)
-			}
-		}
-	}
-	// TODO: and then the failure cases.
-	// 			"https://docker.com":           "",
-	// site_test.go:1094: Expected https://docker.com to resolve to (), got () - error: Not a plain filepath link (https://docker.com)
-
-}
-
-func TestSourceRelativeLinkFileing(t *testing.T) {
-	t.Parallel()
-	site := setupLinkingMockSite(t)
-
-	type resultMap map[string]string
-
-	okresults := map[string]resultMap{
-		"index.md": map[string]string{
-			"/root-image.png": "/root-image.png",
-			"root-image.png":  "/root-image.png",
-		}, "rootfile.md": map[string]string{
-			"/root-image.png": "/root-image.png",
-		}, "level2/2-root.md": map[string]string{
-			"/root-image.png": "/root-image.png",
-			"common.png":      "/level2/common.png",
-		}, "level2/index.md": map[string]string{
-			"/root-image.png": "/root-image.png",
-			"common.png":      "/level2/common.png",
-			"./common.png":    "/level2/common.png",
-		}, "level2/level3/3-root.md": map[string]string{
-			"/root-image.png": "/root-image.png",
-			"common.png":      "/level2/level3/common.png",
-			"../common.png":   "/level2/common.png",
-		}, "level2/level3/index.md": map[string]string{
-			"/root-image.png": "/root-image.png",
-			"common.png":      "/level2/level3/common.png",
-			"../common.png":   "/level2/common.png",
-		},
-	}
-
-	for currentFile, results := range okresults {
-		currentPage := findPage(site, currentFile)
-		if currentPage == nil {
-			t.Fatalf("failed to find current page in site")
-		}
-		for link, url := range results {
-			if out, err := site.Info.SourceRelativeLinkFile(link, currentPage); err != nil || out != url {
-				t.Errorf("Expected %s to resolve to (%s), got (%s) - error: %s", link, url, out, err)
-			} else {
-				//t.Logf("tested ok %s maps to %s", link, out)
-			}
-		}
-	}
 }

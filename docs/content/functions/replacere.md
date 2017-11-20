@@ -1,5 +1,5 @@
 ---
-title: replacere
+title: replaceRE
 # linktitle: replaceRE
 description: Replaces all occurrences of a regular expression with the replacement pattern.
 godocref:
@@ -10,7 +10,7 @@ categories: [functions]
 menu:
   docs:
     parent: "functions"
-#tags: [regex]
+keywords: [regex]
 signature: ["replaceRE PATTERN REPLACEMENT INPUT"]
 workson: []
 hugoversion:

@@ -30,15 +30,15 @@ import (
 type Format struct {
 	// The Name is used as an identifier. Internal output formats (i.e. HTML and RSS)
 	// can be overridden by providing a new definition for those types.
-	Name string
+	Name string `json:"name"`
 
-	MediaType media.Type
+	MediaType media.Type `json:"mediaType"`
 
 	// Must be set to a value when there are two or more conflicting mediatype for the same resource.
-	Path string
+	Path string `json:"path"`
 
 	// The base output file name used when not using "ugly URLs", defaults to "index".
-	BaseName string
+	BaseName string `json:"baseName"`
 
 	// The value to use for rel links
 	//
@@ -48,27 +48,27 @@ type Format struct {
 	// https://www.ampproject.org/docs/guides/deploy/discovery
 	// I.e.:
 	// <link rel="amphtml" href="https://www.example.com/url/to/amp/document.html">
-	Rel string
+	Rel string `json:"rel"`
 
 	// The protocol to use, i.e. "webcal://". Defaults to the protocol of the baseURL.
-	Protocol string
+	Protocol string `json:"protocol"`
 
 	// IsPlainText decides whether to use text/template or html/template
 	// as template parser.
-	IsPlainText bool
+	IsPlainText bool `json:"isPlainText"`
 
 	// IsHTML returns whether this format is int the HTML family. This includes
 	// HTML, AMP etc. This is used to decide when to create alias redirects etc.
-	IsHTML bool
+	IsHTML bool `json:"isHTML"`
 
 	// Enable to ignore the global uglyURLs setting.
-	NoUgly bool
+	NoUgly bool `json:"noUgly"`
 
 	// Enable if it doesn't make sense to include this format in an alternative
 	// format listing, CSS being one good example.
 	// Note that we use the term "alternative" and not "alternate" here, as it
 	// does not necessarily replace the other format, it is an alternative representation.
-	NotAlternative bool
+	NotAlternative bool `json:"notAlternative"`
 }
 
 var (
@@ -150,9 +150,9 @@ func init() {
 
 type Formats []Format
 
-func (f Formats) Len() int           { return len(f) }
-func (f Formats) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-func (f Formats) Less(i, j int) bool { return f[i].Name < f[j].Name }
+func (formats Formats) Len() int           { return len(formats) }
+func (formats Formats) Swap(i, j int)      { formats[i], formats[j] = formats[j], formats[i] }
+func (formats Formats) Less(i, j int) bool { return formats[i].Name < formats[j].Name }
 
 // GetBySuffix gets a output format given as suffix, e.g. "html".
 // It will return false if no format could be found, or if the suffix given
@@ -312,17 +312,17 @@ func decode(mediaTypes media.Types, input, output interface{}) error {
 	return decoder.Decode(input)
 }
 
-func (f Format) BaseFilename() string {
-	return f.BaseName + "." + f.MediaType.Suffix
+func (formats Format) BaseFilename() string {
+	return formats.BaseName + "." + formats.MediaType.Suffix
 }
 
-func (f Format) MarshalJSON() ([]byte, error) {
+func (formats Format) MarshalJSON() ([]byte, error) {
 	type Alias Format
 	return json.Marshal(&struct {
 		MediaType string
 		Alias
 	}{
-		MediaType: f.MediaType.String(),
-		Alias:     (Alias)(f),
+		MediaType: formats.MediaType.String(),
+		Alias:     (Alias)(formats),
 	})
 }

@@ -10,25 +10,26 @@ Note that this repository contains solely the documentation for Hugo. For contri
 
 *Pull requests shall **only** contain changes to the actual documentation. However, changes on the code base of Hugo **and** the documentation shall be a single, atomic pull request in the [hugo](https://github.com/gohugoio/hugo) repository.*
 
+## Branches
+
+* The `master` branch is where the site is automatically built from, and is the place to put changes relevant to the current Hugo version.
+* The `next` branch is where we store changes that is related to the next Hugo release. This can be previewed here: https://next--gohugoio.netlify.com/
 
 ## Build
 
-To view the documentation site locally, you need to clone this repository with submodules:
+To view the documentation site locally, you need to clone this repository:
 
 ```bash
-git clone --recursive https://github.com/gohugoio/hugoDocs.git
+git clone https://github.com/gohugoio/hugoDocs.git
 ```
 
-Or if you already have a clone locally:
-
-```bash
-git submodule update --init
-```
 Also note that the documentation version for a given version of Hugo can also be found in the `/docs` sub-folder of the [Hugo source repository](https://github.com/gohugoio/hugo).
 
 Then to view the docs in your browser, run Hugo and open up the link:
+
 ```bash
-hugo serve
+▶ hugo server
+
 Started building sites ...
 .
 .

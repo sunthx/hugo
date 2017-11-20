@@ -112,6 +112,7 @@ func (t *templateHandler) Lookup(name string) *tpl.TemplateAdapter {
 		// in the text template collection.
 		// The templates are stored without the prefix identificator.
 		name = strings.TrimPrefix(name, textTmplNamePrefix)
+
 		return t.text.Lookup(name)
 	}
 
@@ -121,6 +122,7 @@ func (t *templateHandler) Lookup(name string) *tpl.TemplateAdapter {
 	}
 
 	return t.text.Lookup(name)
+
 }
 
 func (t *templateHandler) clone(d *deps.Deps) *templateHandler {
@@ -200,7 +202,7 @@ func (t *htmlTemplates) Lookup(name string) *tpl.TemplateAdapter {
 	if templ == nil {
 		return nil
 	}
-	return &tpl.TemplateAdapter{Template: templ}
+	return &tpl.TemplateAdapter{Template: templ, Metrics: t.funcster.Deps.Metrics}
 }
 
 func (t *htmlTemplates) lookup(name string) *template.Template {
@@ -240,7 +242,7 @@ func (t *textTemplates) Lookup(name string) *tpl.TemplateAdapter {
 	if templ == nil {
 		return nil
 	}
-	return &tpl.TemplateAdapter{Template: templ}
+	return &tpl.TemplateAdapter{Template: templ, Metrics: t.funcster.Deps.Metrics}
 }
 
 func (t *textTemplates) lookup(name string) *texttemplate.Template {
@@ -305,7 +307,8 @@ func (t *htmlTemplates) addTemplateIn(tt *template.Template, name, tpl string) e
 		// We need to keep track of one ot the output format's shortcode template
 		// without knowing the rendering context.
 		withoutExt := strings.TrimSuffix(name, path.Ext(name))
-		tt.AddParseTree(withoutExt, templ.Tree)
+		clone := template.Must(templ.Clone())
+		tt.AddParseTree(withoutExt, clone.Tree)
 	}
 
 	return nil
@@ -334,7 +337,8 @@ func (t *textTemplates) addTemplateIn(tt *texttemplate.Template, name, tpl strin
 		// We need to keep track of one ot the output format's shortcode template
 		// without knowing the rendering context.
 		withoutExt := strings.TrimSuffix(name, path.Ext(name))
-		tt.AddParseTree(withoutExt, templ.Tree)
+		clone := texttemplate.Must(templ.Clone())
+		tt.AddParseTree(withoutExt, clone.Tree)
 	}
 
 	return nil
@@ -618,7 +622,8 @@ func (t *templateHandler) addTemplateFile(name, baseTemplatePath, path string) e
 	switch ext {
 	case ".amber":
 		//	Only HTML support for Amber
-		templateName := strings.TrimSuffix(name, filepath.Ext(name)) + ".html"
+		withoutExt := strings.TrimSuffix(name, filepath.Ext(name))
+		templateName := withoutExt + ".html"
 		b, err := afero.ReadFile(t.Fs.Source, path)
 
 		if err != nil {
@@ -632,7 +637,19 @@ func (t *templateHandler) addTemplateFile(name, baseTemplatePath, path string) e
 			return err
 		}
 
-		return applyTemplateTransformersToHMLTTemplate(templ)
+		if err := applyTemplateTransformersToHMLTTemplate(templ); err != nil {
+			return err
+		}
+
+		if strings.Contains(templateName, "shortcodes") {
+			// We need to keep track of one ot the output format's shortcode template
+			// without knowing the rendering context.
+			clone := template.Must(templ.Clone())
+			t.html.t.AddParseTree(withoutExt, clone.Tree)
+		}
+
+		return nil
+
 	case ".ace":
 		//	Only HTML support for Ace
 		var innerContent, baseContent []byte

@@ -70,9 +70,9 @@ func readFile(fs *afero.BasePathFs, filename string) (string, error) {
 	return string(b), nil
 }
 
-// ReadFilereads the file named by filename relative to the configured
-// WorkingDir.  It returns the contents as a string.  There is a upper size
-// limit set at 1 megabytes.
+// ReadFile reads the file named by filename relative to the configured WorkingDir.
+// It returns the contents as a string.
+// There is an upper size limit set at 1 megabytes.
 func (ns *Namespace) ReadFile(i interface{}) (string, error) {
 	s, err := cast.ToStringE(i)
 	if err != nil {
@@ -95,4 +95,23 @@ func (ns *Namespace) ReadDir(i interface{}) ([]_os.FileInfo, error) {
 	}
 
 	return list, nil
+}
+
+// FileExists checks whether a file exists under the given path.
+func (ns *Namespace) FileExists(i interface{}) (bool, error) {
+	path, err := cast.ToStringE(i)
+	if err != nil {
+		return false, err
+	}
+
+	if path == "" {
+		return false, errors.New("fileExists needs a path to a file")
+	}
+
+	status, err := afero.Exists(ns.deps.Fs.WorkingDir, path)
+	if err != nil {
+		return false, err
+	}
+
+	return status, nil
 }

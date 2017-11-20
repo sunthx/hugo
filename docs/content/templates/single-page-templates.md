@@ -6,7 +6,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-04-06
 categories: [templates]
-#tags: [page]
+keywords: [page]
 menu:
   docs:
     parent: "templates"
@@ -25,7 +25,7 @@ You can specify a [content's `type`][content type] and `layout` in a single cont
 Hugo assumes your content section and content type are the same unless you tell Hugo otherwise by providing a `type` directly in the front matter of a content file. This is why #1 and #3 come before #2 and #4, respectively, in the following lookup order. Values in angle brackets (`<>`) are variable.
 
 1. `/layouts/<TYPE>/<LAYOUT>.html`
-2. `/layouts/<SECTION>>/<LAYOUT>.html`
+2. `/layouts/<SECTION>/<LAYOUT>.html`
 3. `/layouts/<TYPE>/single.html`
 4. `/layouts/<SECTION>/single.html`
 5. `/layouts/_default/single.html`
@@ -34,6 +34,8 @@ Hugo assumes your content section and content type are the same unless you tell 
 8. `/themes/<THEME>/layouts/<TYPE>/single.html`
 9. `/themes/<THEME>/layouts/<SECTION>/single.html`
 10. `/themes/<THEME>/layouts/_default/single.html`
+
+{{< youtube ZYQ5k0RQzmo >}}
 
 ## Example Single Page Templates
 

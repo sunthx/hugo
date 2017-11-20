@@ -10,7 +10,7 @@ categories: [functions]
 menu:
   docs:
     parent: "functions"
-#tags: [iteration]
+keywords: [iteration]
 toc: false
 signature: ["delimit COLLECTION DELIMIT LAST"]
 workson: [lists,taxonomies,terms]
@@ -36,7 +36,7 @@ The examples of `delimit` that follow all use the same front matter:
 {{< code file="delimit-example-front-matter.toml" nocopy="true" >}}
 +++
 title: I love Delimit
-#tags: [ "tag1", "tag2", "tag3" ]
+keywords: [ "tag1", "tag2", "tag3" ]
 +++
 {{< /code >}}
 
@@ -44,11 +44,9 @@ title: I love Delimit
 <p>Tags: {{ delimit .Params.tags ", " }}</p>
 {{< /code >}}
 
-{{% output file="delimit-page-tags-output.html" %}}
-```
+{{< output file="delimit-page-tags-output.html" >}}
 <p>Tags: tag1, tag2, tag3</p>
-```
-{{% /output %}}
+{{< /output >}}
 
 Here is the same example but with the optional "last" delimiter:
 
@@ -56,11 +54,9 @@ Here is the same example but with the optional "last" delimiter:
 Tags: {{ delimit .Params.tags ", " ", and " }}
 {{< /code >}}
 
-{{% output file="delimit-page-tags-final-and-output.html" %}}
-```
+{{< output file="delimit-page-tags-final-and-output.html" >}}
 <p>Tags: tag1, tag2, and tag3</p>
-```
-{{% /output %}}
+{{< /output >}}
 
 
 [lists]: /templates/lists/

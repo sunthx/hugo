@@ -6,7 +6,7 @@ date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-03-31
 categories: [content management]
-#tags: [menus]
+keywords: [menus]
 draft: false
 menu:
   docs:
@@ -18,7 +18,7 @@ toc: true
 ---
 
 {{% note "Lazy Blogger"%}}
-If all you want is a simple menu for your sections, see the ["Section Menu for Lazy Bloggers" in Menu Templates](/templates/menu-templates/#section-menu-for-lazy-blogger).
+If all you want is a simple menu for your sections, see the ["Section Menu for Lazy Bloggers" in Menu Templates](/templates/menu-templates/#section-menu-for-lazy-bloggers).
 {{% /note %}}
 
 You can do this:
@@ -153,7 +153,7 @@ menu:
 {{< /code >}}
 
 {{% note %}}
-The URLs must be relative to the context root. If the `baseURL` is `http://example.com/mysite/`, then the URLs in the menu must not include the context root `mysite`. Using an absolute URL will overide the baseURL. If the value used for `URL` in the above example is `http://subdomain.example.com/`, the output will be `http://subdomain.example.com`.
+The URLs must be relative to the context root. If the `baseURL` is `https://example.com/mysite/`, then the URLs in the menu must not include the context root `mysite`. Using an absolute URL will overide the baseURL. If the value used for `URL` in the above example is `https://subdomain.example.com/`, the output will be `https://subdomain.example.com`.
 {{% /note %}}
 
 ## Nesting

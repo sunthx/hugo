@@ -32,7 +32,7 @@ import (
 
 	"github.com/gohugoio/hugo/media"
 
-	"github.com/bep/inflect"
+	"github.com/markbates/inflect"
 
 	"sync/atomic"
 
@@ -42,6 +42,7 @@ import (
 	"github.com/gohugoio/hugo/helpers"
 	"github.com/gohugoio/hugo/output"
 	"github.com/gohugoio/hugo/parser"
+	"github.com/gohugoio/hugo/related"
 	"github.com/gohugoio/hugo/source"
 	"github.com/gohugoio/hugo/tpl"
 	"github.com/gohugoio/hugo/transform"
@@ -132,6 +133,11 @@ type Site struct {
 	// Logger etc.
 	*deps.Deps `json:"-"`
 
+	// The func used to title case titles.
+	titleFunc func(s string) string
+
+	relatedDocsHandler *relatedDocsHandler
+
 	siteStats *siteStats
 }
 
@@ -172,6 +178,8 @@ func (s *Site) reset() *Site {
 	return &Site{Deps: s.Deps,
 		layoutHandler:       output.NewLayoutHandler(s.PathSpec.ThemeSet()),
 		disabledKinds:       s.disabledKinds,
+		titleFunc:           s.titleFunc,
+		relatedDocsHandler:  newSearchIndexHandler(s.relatedDocsHandler.cfg),
 		outputFormats:       s.outputFormats,
 		outputFormatsConfig: s.outputFormatsConfig,
 		mediaTypesConfig:    s.mediaTypesConfig,
@@ -227,11 +235,30 @@ func newSite(cfg deps.DepsCfg) (*Site, error) {
 		return nil, err
 	}
 
+	var relatedContentConfig related.Config
+
+	if cfg.Language.IsSet("related") {
+		relatedContentConfig, err = related.DecodeConfig(cfg.Language.Get("related"))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		relatedContentConfig = related.DefaultConfig
+		taxonomies := cfg.Language.GetStringMapString("taxonomies")
+		if _, found := taxonomies["tag"]; found {
+			relatedContentConfig.Add(related.IndexConfig{Name: "tags", Weight: 80})
+		}
+	}
+
+	titleFunc := helpers.GetTitleFunc(cfg.Language.GetString("titleCaseStyle"))
+
 	s := &Site{
 		PageCollections:     c,
 		layoutHandler:       output.NewLayoutHandler(cfg.Cfg.GetString("themesDir") != ""),
 		Language:            cfg.Language,
 		disabledKinds:       disabledKinds,
+		titleFunc:           titleFunc,
+		relatedDocsHandler:  newSearchIndexHandler(relatedContentConfig),
 		outputFormats:       outputFormats,
 		outputFormatsConfig: siteOutputFormatsConfig,
 		mediaTypesConfig:    siteMediaTypesConfig,
@@ -264,7 +291,9 @@ func NewSite(cfg deps.DepsCfg) (*Site, error) {
 // Note: This is mainly used in single site tests.
 func NewSiteDefaultLang(withTemplate ...func(templ tpl.TemplateHandler) error) (*Site, error) {
 	v := viper.New()
-	loadDefaultSettingsFor(v)
+	if err := loadDefaultSettingsFor(v); err != nil {
+		return nil, err
+	}
 	return newSiteForLang(helpers.NewDefaultLanguage(v), withTemplate...)
 }
 
@@ -273,7 +302,9 @@ func NewSiteDefaultLang(withTemplate ...func(templ tpl.TemplateHandler) error) (
 // Note: This is mainly used in single site tests.
 func NewEnglishSite(withTemplate ...func(templ tpl.TemplateHandler) error) (*Site, error) {
 	v := viper.New()
-	loadDefaultSettingsFor(v)
+	if err := loadDefaultSettingsFor(v); err != nil {
+		return nil, err
+	}
 	return newSiteForLang(helpers.NewLanguage("en", v), withTemplate...)
 }
 
@@ -360,6 +391,19 @@ func (s *SiteInfo) String() string {
 
 func (s *SiteInfo) BaseURL() template.URL {
 	return template.URL(s.s.PathSpec.BaseURL.String())
+}
+
+// ServerPort returns the port part of the BaseURL, 0 if none found.
+func (s *SiteInfo) ServerPort() int {
+	ps := s.s.PathSpec.BaseURL.URL().Port()
+	if ps == "" {
+		return 0
+	}
+	p, err := strconv.Atoi(ps)
+	if err != nil {
+		return 0
+	}
+	return p
 }
 
 // Used in tests.
@@ -484,126 +528,6 @@ func (s *SiteInfo) RelRef(ref string, page *Page, options ...string) (string, er
 	}
 
 	return s.refLink(ref, page, true, outputFormat)
-}
-
-// SourceRelativeLink attempts to convert any source page relative links (like [../another.md]) into absolute links
-func (s *SiteInfo) SourceRelativeLink(ref string, currentPage *Page) (string, error) {
-	var refURL *url.URL
-	var err error
-
-	refURL, err = url.Parse(strings.TrimPrefix(ref, currentPage.getRenderingConfig().SourceRelativeLinksProjectFolder))
-	if err != nil {
-		return "", err
-	}
-
-	if refURL.Scheme != "" {
-		// Not a relative source level path
-		return ref, nil
-	}
-
-	var target *Page
-	var link string
-
-	if refURL.Path != "" {
-		refPath := filepath.Clean(filepath.FromSlash(refURL.Path))
-
-		if strings.IndexRune(refPath, os.PathSeparator) == 0 { // filepath.IsAbs fails to me.
-			refPath = refPath[1:]
-		} else {
-			if currentPage != nil {
-				refPath = filepath.Join(currentPage.Source.Dir(), refURL.Path)
-			}
-		}
-
-		for _, page := range s.AllRegularPages {
-			if page.Source.Path() == refPath {
-				target = page
-				break
-			}
-		}
-		// need to exhaust the test, then try with the others :/
-		// if the refPath doesn't end in a filename with extension `.md`, then try with `.md` , and then `/index.md`
-		mdPath := strings.TrimSuffix(refPath, string(os.PathSeparator)) + ".md"
-		for _, page := range s.AllRegularPages {
-			if page.Source.Path() == mdPath {
-				target = page
-				break
-			}
-		}
-		indexPath := filepath.Join(refPath, "index.md")
-		for _, page := range s.AllRegularPages {
-			if page.Source.Path() == indexPath {
-				target = page
-				break
-			}
-		}
-
-		if target == nil {
-			return "", fmt.Errorf("No page found for \"%s\" on page \"%s\".\n", ref, currentPage.Source.Path())
-		}
-
-		link = target.RelPermalink()
-
-	}
-
-	if refURL.Fragment != "" {
-		link = link + "#" + refURL.Fragment
-
-		if refURL.Path != "" && target != nil && !target.getRenderingConfig().PlainIDAnchors {
-			link = link + ":" + target.UniqueID()
-		} else if currentPage != nil && !currentPage.getRenderingConfig().PlainIDAnchors {
-			link = link + ":" + currentPage.UniqueID()
-		}
-	}
-
-	return link, nil
-}
-
-// SourceRelativeLinkFile attempts to convert any non-md source relative links (like [../another.gif]) into absolute links
-func (s *SiteInfo) SourceRelativeLinkFile(ref string, currentPage *Page) (string, error) {
-	var refURL *url.URL
-	var err error
-
-	refURL, err = url.Parse(strings.TrimPrefix(ref, currentPage.getRenderingConfig().SourceRelativeLinksProjectFolder))
-	if err != nil {
-		return "", err
-	}
-
-	if refURL.Scheme != "" {
-		// Not a relative source level path
-		return ref, nil
-	}
-
-	var target *source.File
-	var link string
-
-	if refURL.Path != "" {
-		refPath := filepath.Clean(filepath.FromSlash(refURL.Path))
-
-		if strings.IndexRune(refPath, os.PathSeparator) == 0 { // filepath.IsAbs fails to me.
-			refPath = refPath[1:]
-		} else {
-			if currentPage != nil {
-				refPath = filepath.Join(currentPage.Source.Dir(), refURL.Path)
-			}
-		}
-
-		for _, file := range *s.Files {
-			if file.Path() == refPath {
-				target = file
-				break
-			}
-		}
-
-		if target == nil {
-			return "", fmt.Errorf("No file found for \"%s\" on page \"%s\".\n", ref, currentPage.Source.Path())
-		}
-
-		link = target.Path()
-		return "/" + filepath.ToSlash(link), nil
-	}
-
-	return "", fmt.Errorf("failed to find a file to match \"%s\" on page \"%s\"", ref, currentPage.Source.Path())
 }
 
 func (s *SiteInfo) addToPaginationPageCount(cnt uint64) {
@@ -982,7 +906,7 @@ func (s *Site) setupSitePages() {
 	s.Info.LastChange = siteLastChange
 }
 
-func (s *Site) render(outFormatIdx int) (err error) {
+func (s *Site) render(config *BuildCfg, outFormatIdx int) (err error) {
 
 	if outFormatIdx == 0 {
 		if err = s.preparePages(); err != nil {
@@ -1006,7 +930,7 @@ func (s *Site) render(outFormatIdx int) (err error) {
 
 	}
 
-	if err = s.renderPages(); err != nil {
+	if err = s.renderPages(config.RecentlyVisited); err != nil {
 		return
 	}
 
@@ -1053,10 +977,8 @@ func (s *Site) initialize() (err error) {
 		return err
 	}
 
-	staticDir := s.PathSpec.GetStaticDirPath() + "/"
-
 	sp := source.NewSourceSpec(s.Cfg, s.Fs)
-	s.Source = sp.NewFilesystem(s.absContentDir(), staticDir)
+	s.Source = sp.NewFilesystem(s.absContentDir())
 
 	return
 }
@@ -1720,6 +1642,7 @@ func (s *Site) assembleTaxonomies() {
 // Prepare site for a new full build.
 func (s *Site) resetBuildState() {
 
+	s.relatedDocsHandler = newSearchIndexHandler(s.relatedDocsHandler.cfg)
 	s.PageCollections = newPageCollectionsFromPages(s.rawAllPages)
 	// TODO(bep) get rid of this double
 	s.Info.PageCollections = s.PageCollections
@@ -1818,8 +1741,7 @@ func (s *Site) appendThemeTemplates(in []string) []string {
 // Stats prints Hugo builds stats to the console.
 // This is what you see after a successful hugo build.
 func (s *Site) Stats() {
-
-	s.Log.FEEDBACK.Printf("Built site for language %s:\n", s.Language.Lang)
+	s.Log.FEEDBACK.Printf("\nBuilt site for language %s:\n", s.Language.Lang)
 	s.Log.FEEDBACK.Println(s.draftStats())
 	s.Log.FEEDBACK.Println(s.futureStats())
 	s.Log.FEEDBACK.Println(s.expiredStats())
@@ -1895,7 +1817,7 @@ func (s *Site) renderAndWriteXML(name string, dest string, d interface{}, layout
 	if s.Info.relativeURLs {
 		path = []byte(helpers.GetDottedRelativePath(dest))
 	} else {
-		s := s.Cfg.GetString("baseURL")
+		s := s.PathSpec.BaseURL.String()
 		if !strings.HasSuffix(s, "/") {
 			s += "/"
 		}
@@ -1937,7 +1859,7 @@ func (s *Site) renderAndWritePage(name string, dest string, p *PageOutput, layou
 		}
 
 		if s.running() && s.Cfg.GetBool("watch") && !s.Cfg.GetBool("disableLiveReload") {
-			transformLinks = append(transformLinks, transform.LiveReloadInject(s.Cfg.GetInt("port")))
+			transformLinks = append(transformLinks, transform.LiveReloadInject(s.Cfg.GetInt("liveReloadPort")))
 		}
 
 		// For performance reasons we only inject the Hugo generator tag on the home page.
@@ -1953,7 +1875,7 @@ func (s *Site) renderAndWritePage(name string, dest string, p *PageOutput, layou
 	if s.Info.relativeURLs {
 		path = []byte(helpers.GetDottedRelativePath(dest))
 	} else if s.Info.canonifyURLs {
-		url := s.Cfg.GetString("baseURL")
+		url := s.PathSpec.BaseURL.String()
 		if !strings.HasSuffix(url, "/") {
 			url += "/"
 		}
@@ -2121,7 +2043,7 @@ func (s *Site) newTaxonomyPage(plural, key string) *Page {
 		p.Title = helpers.FirstUpper(key)
 		key = s.PathSpec.MakePathSanitized(key)
 	} else {
-		p.Title = strings.Replace(strings.Title(key), "-", " ", -1)
+		p.Title = strings.Replace(s.titleFunc(key), "-", " ", -1)
 	}
 
 	return p
@@ -2141,6 +2063,6 @@ func (s *Site) newSectionPage(name string) *Page {
 
 func (s *Site) newTaxonomyTermsPage(plural string) *Page {
 	p := s.newNodePage(KindTaxonomyTerm, plural)
-	p.Title = strings.Title(plural)
+	p.Title = s.titleFunc(plural)
 	return p
 }

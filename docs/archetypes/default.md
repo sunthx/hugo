@@ -1,13 +1,11 @@
 ---
-linktitle: ""
+title: "{{ replace .TranslationBaseName "-" " " | title }}"
+date: {{ .Date }}
 description: ""
-godocref: ""
-publishdate: ""
-lastmod: ""
 categories: []
-tags: []
-weight: 00
+keywords: []
 slug: ""
 aliases: []
 toc: false
+draft: true
 ---

@@ -18,6 +18,9 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"unicode"
+
+	"github.com/gohugoio/hugo/related"
 
 	"github.com/bep/gitmap"
 
@@ -37,6 +40,7 @@ import (
 	"unicode/utf8"
 
 	bp "github.com/gohugoio/hugo/bufferpool"
+	"github.com/gohugoio/hugo/compare"
 	"github.com/gohugoio/hugo/source"
 	"github.com/spf13/cast"
 )
@@ -48,12 +52,20 @@ var (
 	allKindsInPages = []string{KindPage, KindHome, KindSection, KindTaxonomy, KindTaxonomyTerm}
 
 	allKinds = append(allKindsInPages, []string{kindRSS, kindSitemap, kindRobotsTXT, kind404}...)
+
+	// Assert that it implements the Eqer interface.
+	_ compare.Eqer = (*Page)(nil)
+	_ compare.Eqer = (*PageOutput)(nil)
+
+	// Assert that it implements the interface needed for related searches.
+	_ related.Document = (*Page)(nil)
 )
 
 const (
 	KindPage = "page"
 
 	// The rest are node types; home page, sections etc.
+
 	KindHome         = "home"
 	KindSection      = "section"
 	KindTaxonomy     = "taxonomy"
@@ -92,6 +104,10 @@ type Page struct {
 	// translations will contain references to this page in other language
 	// if available.
 	translations Pages
+
+	// A key that maps to translation(s) of this page. This value is fetched
+	// from the page front matter.
+	translationKey string
 
 	// Params contains configuration defined in the params section of page frontmatter.
 	Params map[string]interface{}
@@ -225,6 +241,28 @@ type Page struct {
 	targetPathDescriptorPrototype *targetPathDescriptor
 }
 
+// SearchKeywords implements the related.Document interface needed for fast page searches.
+func (p *Page) SearchKeywords(cfg related.IndexConfig) ([]related.Keyword, error) {
+
+	v, err := p.Param(cfg.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg.ToKeywords(v)
+}
+
+// PubDate is when this page was or will be published.
+// NOTE: This is currently used for search only and is not meant to be used
+// directly in templates. We need to consolidate the dates in this struct.
+// TODO(bep) see https://github.com/gohugoio/hugo/issues/3854
+func (p *Page) PubDate() time.Time {
+	if !p.PublishDate.IsZero() {
+		return p.PublishDate
+	}
+	return p.Date
+}
+
 func (p *Page) RSSLink() template.URL {
 	f, found := p.outputFormats.GetByName(output.RSSFormat.Name)
 	if !found {
@@ -321,6 +359,21 @@ func (ps Pages) findPagePosByFilePath(inPath string) int {
 		}
 	}
 	return -1
+}
+
+func (ps Pages) removeFirstIfFound(p *Page) Pages {
+	ii := -1
+	for i, pp := range ps {
+		if pp == p {
+			ii = i
+			break
+		}
+	}
+
+	if ii != -1 {
+		ps = append(ps[:ii], ps[ii+1:]...)
+	}
+	return ps
 }
 
 func (ps Pages) findFirstPagePosByFilePathPrefix(prefix string) int {
@@ -436,10 +489,10 @@ func traverse(keys []string, m map[string]interface{}) interface{} {
 	if len(rest) == 0 {
 		// That was the last key.
 		return result
-	} else {
-		// That was not the last key.
-		return traverse(rest, cast.ToStringMap(result))
 	}
+
+	// That was not the last key.
+	return traverse(rest, cast.ToStringMap(result))
 }
 
 func (p *Page) Author() Author {
@@ -484,26 +537,44 @@ var (
 	internalSummaryDivider = []byte("HUGOMORE42")
 )
 
-// We have to replace the <!--more--> with something that survives all the
-// rendering engines.
-// TODO(bep) inline replace
-func (p *Page) replaceDivider(content []byte) []byte {
-	summaryDivider := helpers.SummaryDivider
-	// TODO(bep) handle better.
-	if p.Ext() == "org" || p.Markup == "org" {
-		summaryDivider = []byte("# more")
+// replaceDivider replaces the <!--more--> with an internal value and returns
+// whether the contentis truncated or not.
+// Note: The content slice will be modified if needed.
+func replaceDivider(content, from, to []byte) ([]byte, bool) {
+	dividerIdx := bytes.Index(content, from)
+	if dividerIdx == -1 {
+		return content, false
 	}
-	sections := bytes.Split(content, summaryDivider)
+
+	afterSummary := content[dividerIdx+len(from):]
 
 	// If the raw content has nothing but whitespace after the summary
 	// marker then the page shouldn't be marked as truncated.  This check
 	// is simplest against the raw content because different markup engines
 	// (rst and asciidoc in particular) add div and p elements after the
 	// summary marker.
-	p.Truncated = (len(sections) == 2 &&
-		len(bytes.Trim(sections[1], " \n\r")) > 0)
+	truncated := bytes.IndexFunc(afterSummary, func(r rune) bool { return !unicode.IsSpace(r) }) != -1
 
-	return bytes.Join(sections, internalSummaryDivider)
+	content = append(content[:dividerIdx], append(to, afterSummary...)...)
+
+	return content, truncated
+
+}
+
+// We have to replace the <!--more--> with something that survives all the
+// rendering engines.
+func (p *Page) replaceDivider(content []byte) []byte {
+	summaryDivider := helpers.SummaryDivider
+	// TODO(bep) handle better.
+	if p.Ext() == "org" || p.Markup == "org" {
+		summaryDivider = []byte("# more")
+	}
+
+	replaced, truncated := replaceDivider(content, summaryDivider, internalSummaryDivider)
+
+	p.Truncated = truncated
+
+	return replaced
 }
 
 // Returns the page as summary and main if a user defined split is provided.
@@ -611,9 +682,9 @@ func (p *Page) setAutoSummary() error {
 	var summary string
 	var truncated bool
 	if p.isCJKLanguage {
-		summary, truncated = helpers.TruncateWordsByRune(p.PlainWords(), helpers.SummaryLength)
+		summary, truncated = p.s.ContentSpec.TruncateWordsByRune(p.PlainWords())
 	} else {
-		summary, truncated = helpers.TruncateWordsToWholeSentence(p.Plain(), helpers.SummaryLength)
+		summary, truncated = p.s.ContentSpec.TruncateWordsToWholeSentence(p.Plain())
 	}
 	p.Summary = template.HTML(summary)
 	p.Truncated = truncated
@@ -622,22 +693,11 @@ func (p *Page) setAutoSummary() error {
 }
 
 func (p *Page) renderContent(content []byte) []byte {
-	var fn helpers.LinkResolverFunc
-	var fileFn helpers.FileResolverFunc
-	if p.getRenderingConfig().SourceRelativeLinksEval {
-		fn = func(ref string) (string, error) {
-			return p.Site.SourceRelativeLink(ref, p)
-		}
-		fileFn = func(ref string) (string, error) {
-			return p.Site.SourceRelativeLinkFile(ref, p)
-		}
-	}
-
 	return p.s.ContentSpec.RenderBytes(&helpers.RenderingContext{
 		Content: content, RenderTOC: true, PageFmt: p.determineMarkupType(),
 		Cfg:        p.Language(),
 		DocumentID: p.UniqueID(), DocumentName: p.Path(),
-		Config: p.getRenderingConfig(), LinkResolver: fn, FileResolver: fileFn})
+		Config: p.getRenderingConfig()})
 }
 
 func (p *Page) getRenderingConfig() *helpers.Blackfriday {
@@ -702,7 +762,7 @@ func (p *Page) Type() string {
 // since Hugo 0.22 we support nested sections, but this will always be the first
 // element of any nested path.
 func (p *Page) Section() string {
-	if p.Kind == KindSection {
+	if p.Kind == KindSection || p.Kind == KindTaxonomy || p.Kind == KindTaxonomyTerm {
 		return p.sections[0]
 	}
 	return p.Source.Section()
@@ -824,6 +884,22 @@ func (p *Page) Translations() Pages {
 	return translations
 }
 
+// TranslationKey returns the key used to map language translations of this page.
+// It will use the translationKey set in front matter if set, or the content path and
+// filename (excluding any language code and extension), e.g. "about/index".
+// The Page Kind is always prepended.
+func (p *Page) TranslationKey() string {
+	if p.translationKey != "" {
+		return p.Kind + "/" + p.translationKey
+	}
+
+	if p.IsNode() {
+		return path.Join(p.Kind, path.Join(p.sections...), p.TranslationBaseName())
+	}
+
+	return path.Join(p.Kind, filepath.ToSlash(p.Dir()), p.TranslationBaseName())
+}
+
 func (p *Page) LinkTitle() string {
 	if len(p.linkTitle) > 0 {
 		return p.linkTitle
@@ -916,6 +992,8 @@ func (p *Page) update(f interface{}) error {
 	// Needed for case insensitive fetching of params values
 	helpers.ToLowerMap(m)
 
+	var modified time.Time
+
 	var err error
 	var draft, published, isCJKLanguage *bool
 	for k, v := range m {
@@ -959,6 +1037,14 @@ func (p *Page) update(f interface{}) error {
 			if err != nil {
 				p.s.Log.ERROR.Printf("Failed to parse lastmod '%v' in page %s", v, p.File.Path())
 			}
+		case "modified":
+			vv, err := cast.ToTimeE(v)
+			if err == nil {
+				p.Params[loki] = vv
+				modified = vv
+			} else {
+				p.Params[loki] = cast.ToString(v)
+			}
 		case "outputs":
 			o := cast.ToStringSlice(v)
 			if len(o) > 0 {
@@ -979,6 +1065,7 @@ func (p *Page) update(f interface{}) error {
 			if err != nil {
 				p.s.Log.ERROR.Printf("Failed to parse publishdate '%v' in page %s", v, p.File.Path())
 			}
+			p.Params[loki] = p.PublishDate
 		case "expirydate", "unpublishdate":
 			p.ExpiryDate, err = cast.ToTimeE(v)
 			if err != nil {
@@ -988,8 +1075,19 @@ func (p *Page) update(f interface{}) error {
 			draft = new(bool)
 			*draft = cast.ToBool(v)
 		case "published": // Intentionally undocumented
-			published = new(bool)
-			*published = cast.ToBool(v)
+			vv, err := cast.ToBoolE(v)
+			if err == nil {
+				published = &vv
+			} else {
+				// Some sites use this as the publishdate
+				vv, err := cast.ToTimeE(v)
+				if err == nil {
+					p.PublishDate = vv
+					p.Params[loki] = p.PublishDate
+				} else {
+					p.Params[loki] = cast.ToString(v)
+				}
+			}
 		case "layout":
 			p.Layout = cast.ToString(v)
 			p.Params[loki] = p.Layout
@@ -1016,6 +1114,9 @@ func (p *Page) update(f interface{}) error {
 		case "iscjklanguage":
 			isCJKLanguage = new(bool)
 			*isCJKLanguage = cast.ToBool(v)
+		case "translationkey":
+			p.translationKey = cast.ToString(v)
+			p.Params[loki] = p.translationKey
 		default:
 			// If not one of the explicit values, store in Params
 			switch vv := v.(type) {
@@ -1069,6 +1170,14 @@ func (p *Page) update(f interface{}) error {
 	}
 	p.Params["draft"] = p.Draft
 
+	if p.Date.IsZero() {
+		p.Date = p.PublishDate
+	}
+
+	if p.PublishDate.IsZero() {
+		p.PublishDate = p.Date
+	}
+
 	if p.Date.IsZero() && p.s.Cfg.GetBool("useModTimeAsFallback") {
 		fi, err := p.s.Fs.Source.Stat(filepath.Join(p.s.PathSpec.AbsPathify(p.s.Cfg.GetString("contentDir")), p.File.Path()))
 		if err == nil {
@@ -1078,9 +1187,16 @@ func (p *Page) update(f interface{}) error {
 	}
 
 	if p.Lastmod.IsZero() {
-		p.Lastmod = p.Date
+		if !modified.IsZero() {
+			p.Lastmod = modified
+		} else {
+			p.Lastmod = p.Date
+		}
+
 	}
 	p.Params["lastmod"] = p.Lastmod
+	p.Params["publishdate"] = p.PublishDate
+	p.Params["expirydate"] = p.ExpiryDate
 
 	if isCJKLanguage != nil {
 		p.isCJKLanguage = *isCJKLanguage
@@ -1659,6 +1775,10 @@ func (p *Page) isNewTranslation(candidate *Page) bool {
 func (p *Page) shouldAddLanguagePrefix() bool {
 	if !p.Site.IsMultiLingual() {
 		return false
+	}
+
+	if p.s.owner.IsMultihost() {
+		return true
 	}
 
 	if p.Lang() == "" {

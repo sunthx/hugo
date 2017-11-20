@@ -38,8 +38,13 @@ func (v HugoVersion) String() string {
 	return hugoVersion(v.Number, v.PatchLevel, v.Suffix)
 }
 
+// ParseHugoVersion parses a version string.
 func ParseHugoVersion(s string) (HugoVersion, error) {
 	var vv HugoVersion
+	if strings.HasSuffix(s, "-test") {
+		vv.Suffix = "-test"
+		s = strings.TrimSuffix(s, "-test")
+	}
 
 	if strings.Contains(s, "DEV") {
 		return vv, errors.New("DEV versions not supported by parse")
@@ -53,6 +58,8 @@ func ParseHugoVersion(s string) (HugoVersion, error) {
 	return vv, nil
 }
 
+// MustParseHugoVersion parses a version string
+// and panics if any error occurs.
 func MustParseHugoVersion(s string) HugoVersion {
 	vv, err := ParseHugoVersion(s)
 	if err != nil {
@@ -72,7 +79,7 @@ func (v HugoVersion) Next() HugoVersion {
 	return HugoVersion{Number: v.Number + 0.01}
 }
 
-// Pre returns the previous Hugo release version.
+// Prev returns the previous Hugo release version.
 func (v HugoVersion) Prev() HugoVersion {
 	return HugoVersion{Number: v.Number - 0.01}
 }
@@ -86,7 +93,7 @@ func (v HugoVersion) NextPatchLevel(level int) HugoVersion {
 // CurrentHugoVersion represents the current build version.
 // This should be the only one.
 var CurrentHugoVersion = HugoVersion{
-	Number:     0.26,
+	Number:     0.31,
 	PatchLevel: 0,
 	Suffix:     "-DEV",
 }

@@ -19,11 +19,12 @@ import (
 	"testing"
 
 	"github.com/gohugoio/hugo/deps"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var ns = New(&deps.Deps{})
+var ns = New(&deps.Deps{Cfg: viper.New()})
 
 type tstNoStringer struct{}
 
@@ -573,6 +574,41 @@ func TestTrim(t *testing.T) {
 	}
 }
 
+func TestTrimLeft(t *testing.T) {
+	t.Parallel()
+
+	for i, test := range []struct {
+		s      interface{}
+		cutset interface{}
+		expect interface{}
+	}{
+		{"abba", "a", "bba"},
+		{"abba", "ab", ""},
+		{"<tag>", "<>", "tag>"},
+		{`"quote"`, `"`, `quote"`},
+		{1221, "1", "221"},
+		{1221, "12", ""},
+		{"007", "0", "7"},
+		{template.HTML("<tag>"), "<>", "tag>"},
+		{[]byte("<tag>"), "<>", "tag>"},
+		// errors
+		{"", tstNoStringer{}, false},
+		{tstNoStringer{}, "", false},
+	} {
+		errMsg := fmt.Sprintf("[%d] %v", i, test)
+
+		result, err := ns.TrimLeft(test.cutset, test.s)
+
+		if b, ok := test.expect.(bool); ok && !b {
+			require.Error(t, err, errMsg)
+			continue
+		}
+
+		require.NoError(t, err, errMsg)
+		assert.Equal(t, test.expect, result, errMsg)
+	}
+}
+
 func TestTrimPrefix(t *testing.T) {
 	t.Parallel()
 
@@ -591,7 +627,42 @@ func TestTrimPrefix(t *testing.T) {
 	} {
 		errMsg := fmt.Sprintf("[%d] %v", i, test)
 
-		result, err := ns.TrimPrefix(test.s, test.prefix)
+		result, err := ns.TrimPrefix(test.prefix, test.s)
+
+		if b, ok := test.expect.(bool); ok && !b {
+			require.Error(t, err, errMsg)
+			continue
+		}
+
+		require.NoError(t, err, errMsg)
+		assert.Equal(t, test.expect, result, errMsg)
+	}
+}
+
+func TestTrimRight(t *testing.T) {
+	t.Parallel()
+
+	for i, test := range []struct {
+		s      interface{}
+		cutset interface{}
+		expect interface{}
+	}{
+		{"abba", "a", "abb"},
+		{"abba", "ab", ""},
+		{"<tag>", "<>", "<tag"},
+		{`"quote"`, `"`, `"quote`},
+		{1221, "1", "122"},
+		{1221, "12", ""},
+		{"007", "0", "007"},
+		{template.HTML("<tag>"), "<>", "<tag"},
+		{[]byte("<tag>"), "<>", "<tag"},
+		// errors
+		{"", tstNoStringer{}, false},
+		{tstNoStringer{}, "", false},
+	} {
+		errMsg := fmt.Sprintf("[%d] %v", i, test)
+
+		result, err := ns.TrimRight(test.cutset, test.s)
 
 		if b, ok := test.expect.(bool); ok && !b {
 			require.Error(t, err, errMsg)
@@ -621,7 +692,7 @@ func TestTrimSuffix(t *testing.T) {
 	} {
 		errMsg := fmt.Sprintf("[%d] %v", i, test)
 
-		result, err := ns.TrimSuffix(test.s, test.suffix)
+		result, err := ns.TrimSuffix(test.suffix, test.s)
 
 		if b, ok := test.expect.(bool); ok && !b {
 			require.Error(t, err, errMsg)

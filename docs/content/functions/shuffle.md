@@ -6,7 +6,7 @@ godocref:
 date: 2017-02-01
 publishdate: 2017-02-01
 lastmod: 2017-04-30
-#tags: [ordering]
+keywords: [ordering]
 categories: [functions]
 menu:
   docs:
@@ -29,13 +29,11 @@ aliases: []
 
 This example would return the following:
 
-{{% output file="shuffle-output.html" %}}
-```
+{{< output file="shuffle-output.html" >}}
 <!-- Shuffled sequence =  -->
 <div>2 5 3 1 4</div>
 <!-- Shuffled slice =  -->
 <div>buzz foo bar</div>
-```
-{{% /output %}}
+{{< /output >}}
 
 This example also makes use of the [slice](/functions/slice/) and [seq](/functions/seq/) functions.
