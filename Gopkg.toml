@@ -10,7 +10,7 @@
 
 [[constraint]]
   name = "github.com/alecthomas/chroma"
-   branch = "master"
+  revision = "v0.2.0"
 
 [[constraint]]
   branch = "master"
@@ -18,11 +18,11 @@
 
 [[constraint]]
  name = "github.com/chaseadamsio/goorgeous"
- revision = "7daffad08e0d467847663af3655dcc4cbcda48e8"
+ revision = "v1.1.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/dchest/cssmin"
+ name = "github.com/disintegration/imaging"
+ revision = "v1.2.4"
 
 [[constraint]]
   name = "github.com/magefile/mage"
@@ -82,7 +82,7 @@
 
 [[constraint]]
   name = "github.com/spf13/afero"
-  version = "1.0.0"
+  version = "1.0.1"
 
 [[constraint]]
   name = "github.com/spf13/cast"
@@ -115,6 +115,10 @@
 [[constraint]]
   name = "github.com/stretchr/testify"
   version = "1.1.4"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/olekukonko/tablewriter"
 
 [[constraint]]
   name = "github.com/yosssi/ace"

@@ -32,7 +32,6 @@ import (
 
 	"github.com/gohugoio/hugo/deps"
 	"github.com/gohugoio/hugo/helpers"
-	"github.com/gohugoio/hugo/source"
 	"github.com/gohugoio/hugo/tpl"
 	"github.com/stretchr/testify/require"
 )
@@ -530,10 +529,10 @@ tags:
 			"<p><strong>Tags:</strong> 2</p>\n"},
 	}
 
-	sources := make([]source.ByteSource, len(tests))
+	sources := make([][2]string, len(tests))
 
 	for i, test := range tests {
-		sources[i] = source.ByteSource{Name: filepath.FromSlash(test.contentPath), Content: []byte(test.content)}
+		sources[i] = [2]string{filepath.FromSlash(test.contentPath), test.content}
 	}
 
 	addTemplates := func(templ tpl.TemplateHandler) error {
@@ -565,7 +564,7 @@ tags:
 	th := testHelper{s.Cfg, s.Fs, t}
 
 	for _, test := range tests {
-		if strings.HasSuffix(test.contentPath, ".ad") && !helpers.HasAsciidoctor() && !helpers.HasAsciidoc() {
+		if strings.HasSuffix(test.contentPath, ".ad") && !helpers.HasAsciidoc() {
 			fmt.Println("Skip Asciidoc test case as no Asciidoc present.")
 			continue
 		} else if strings.HasSuffix(test.contentPath, ".rst") && !helpers.HasRst() {

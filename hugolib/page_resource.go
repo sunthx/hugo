@@ -1,4 +1,4 @@
-// Copyright 2015 The Hugo Authors. All rights reserved.
+// Copyright 2017-present The Hugo Authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,15 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package source
+package hugolib
 
-// ByteSource represents a source's name and content.
-// It's currently only used for testing purposes.
-type ByteSource struct {
-	Name    string
-	Content []byte
-}
+import (
+	"github.com/gohugoio/hugo/resource"
+)
 
-func (b *ByteSource) String() string {
-	return b.Name + " " + string(b.Content)
-}
+var (
+	_ resource.Resource = (*Page)(nil)
+	_ resource.Resource = (*PageOutput)(nil)
+)

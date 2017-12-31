@@ -20,10 +20,15 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
-  branch = "master"
   name = "github.com/alecthomas/chroma"
-  packages = [".","formatters","formatters/html","lexers","styles"]
-  revision = "9c81d25368bedda10b71f4cde071d6bae7312008"
+  packages = [
+    ".",
+    "formatters",
+    "formatters/html",
+    "lexers",
+    "styles"
+  ]
+  revision = "v0.2.0"
 
 [[projects]]
   branch = "master"
@@ -34,7 +39,7 @@
 [[projects]]
   name = "github.com/chaseadamsio/goorgeous"
   packages = ["."]
-  revision = "7daffad08e0d467847663af3655dcc4cbcda48e8"
+  revision = "v1.1.0"
 
 [[projects]]
   name = "github.com/cpuguy83/go-md2man"
@@ -55,21 +60,26 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/dchest/cssmin"
+  name = "github.com/disintegration/imaging"
   packages = ["."]
-  revision = "fb8d9b44afdc258bfff6052d3667521babcb2239"
+  revision = "v1.2.4"
 
 [[projects]]
   name = "github.com/dlclark/regexp2"
-  packages = [".","syntax"]
+  packages = [
+    ".",
+    "syntax"
+  ]
   revision = "487489b64fb796de2e55f4e8a4ad1e145f80e957"
   version = "v1.1.6"
 
 [[projects]]
   branch = "master"
   name = "github.com/eknkc/amber"
-  packages = [".","parser"]
+  packages = [
+    ".",
+    "parser"
+  ]
   revision = "cdade1c073850f4ffc70a829e31235ea6892853b"
 
 [[projects]]
@@ -105,7 +115,17 @@
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-  packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
+  packages = [
+    ".",
+    "hcl/ast",
+    "hcl/parser",
+    "hcl/scanner",
+    "hcl/strconv",
+    "hcl/token",
+    "json/parser",
+    "json/scanner",
+    "json/token"
+  ]
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
@@ -116,7 +136,10 @@
 
 [[projects]]
   name = "github.com/jdkato/prose"
-  packages = ["internal/util","transform"]
+  packages = [
+    "internal/util",
+    "transform"
+  ]
   revision = "20d3663d4bc9dd10d75abcde9d92e04b4861c674"
   version = "v1.1.0"
 
@@ -134,7 +157,10 @@
 
 [[projects]]
   name = "github.com/magefile/mage"
-  packages = ["mg","sh"]
+  packages = [
+    "mg",
+    "sh"
+  ]
   revision = "2f974307b636f59c13b88704cf350a4772fef271"
   version = "v1.0.2"
 
@@ -148,7 +174,13 @@
   branch = "master"
   name = "github.com/markbates/inflect"
   packages = ["."]
-  revision = "ea17041f342f81e8849284b87bc3db1a6fc596bb"
+  revision = "54ffb37507cd7d2ccd4768855e84f9ff6c4352b6"
+
+[[projects]]
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
+  version = "v0.0.2"
 
 [[projects]]
   name = "github.com/miekg/mmark"
@@ -164,9 +196,19 @@
 
 [[projects]]
   name = "github.com/nicksnyder/go-i18n"
-  packages = ["i18n/bundle","i18n/language","i18n/translation"]
+  packages = [
+    "i18n/bundle",
+    "i18n/language",
+    "i18n/translation"
+  ]
   revision = "0dc1626d56435e9d605a29875701721c54bc9bbd"
   version = "v1.10.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/olekukonko/tablewriter"
+  packages = ["."]
+  revision = "65fec0d89a572b4367094e2058d3ebe667de3b60"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -194,9 +236,12 @@
 
 [[projects]]
   name = "github.com/spf13/afero"
-  packages = [".","mem"]
-  revision = "8d919cbe7e2627e417f3e45c3c0e489a5b7e2536"
-  version = "v1.0.0"
+  packages = [
+    ".",
+    "mem"
+  ]
+  revision = "ec3a3111d1e1bdff38a61e09d5a5f5e974905611"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/spf13/cast"
@@ -207,7 +252,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/spf13/cobra"
-  packages = [".","doc"]
+  packages = [
+    ".",
+    "doc"
+  ]
   revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
 
 [[projects]]
@@ -242,7 +290,10 @@
 
 [[projects]]
   name = "github.com/stretchr/testify"
-  packages = ["assert","require"]
+  packages = [
+    "assert",
+    "require"
+  ]
   revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
   version = "v1.1.4"
 
@@ -255,14 +306,31 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/image"
-  packages = ["riff","vp8","vp8l","webp"]
+  packages = [
+    "bmp",
+    "riff",
+    "tiff",
+    "tiff/lzw",
+    "vp8",
+    "vp8l",
+    "webp"
+  ]
   revision = "f7e31b4ea2e3413ab91b4e7d2dc83e5f8d19a44c"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["idna"]
+  packages = [
+    "context",
+    "idna"
+  ]
   revision = "cd69bc3fc700721b709c3a59e16e24c67b58f6ff"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  revision = "fd80eb99c8f653c847d294a001bdf2a3a6f768f5"
 
 [[projects]]
   branch = "master"
@@ -273,7 +341,23 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
-  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable","width"]
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable",
+    "width"
+  ]
   revision = "c01e4764d870b77f8abe5096ee19ad20d80e8075"
 
 [[projects]]
@@ -285,6 +369,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a7cec7b1df49f84fdd4073cc70139d56c62c5fffcc7e3fcea5ca29615d4b9568"
+  inputs-digest = "7259b4caf8e75db0b809f06d4897dc870261252e3aecd68ea1348c87a5da9d50"
   solver-name = "gps-cdcl"
   solver-version = 1

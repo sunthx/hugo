@@ -110,104 +110,94 @@ func init() {
 }
 
 func server(cmd *cobra.Command, args []string) error {
-	cfg, err := InitializeConfig(serverCmd)
-	if err != nil {
-		return err
+	// If a Destination is provided via flag write to disk
+	if destination != "" {
+		renderToDisk = true
 	}
 
-	c, err := newCommandeer(cfg)
-	if err != nil {
-		return err
-	}
-
-	if cmd.Flags().Changed("disableLiveReload") {
-		c.Set("disableLiveReload", disableLiveReload)
-	}
-
-	if cmd.Flags().Changed("navigateToChanged") {
-		c.Set("navigateToChanged", navigateToChanged)
-	}
-
-	if cmd.Flags().Changed("disableFastRender") {
-		c.Set("disableFastRender", disableFastRender)
-	}
-
-	if serverWatch {
-		c.Set("watch", true)
-	}
-
-	if c.Cfg.GetBool("watch") {
-		serverWatch = true
-		c.watchConfig()
-	}
-
-	languages := c.languages()
-	serverPorts := make([]int, 1)
-
-	if languages.IsMultihost() {
-		serverPorts = make([]int, len(languages))
-	}
-
-	currentServerPort := serverPort
-
-	for i := 0; i < len(serverPorts); i++ {
-		l, err := net.Listen("tcp", net.JoinHostPort(serverInterface, strconv.Itoa(currentServerPort)))
-		if err == nil {
-			l.Close()
-			serverPorts[i] = currentServerPort
-		} else {
-			if i == 0 && serverCmd.Flags().Changed("port") {
-				// port set explicitly by user -- he/she probably meant it!
-				return newSystemErrorF("Server startup failed: %s", err)
-			}
-			jww.ERROR.Println("port", serverPort, "already in use, attempting to use an available port")
-			sp, err := helpers.FindAvailablePort()
-			if err != nil {
-				return newSystemError("Unable to find alternative port to use:", err)
-			}
-			serverPorts[i] = sp.Port
+	cfgInit := func(c *commandeer) error {
+		c.Set("renderToMemory", !renderToDisk)
+		if cmd.Flags().Changed("navigateToChanged") {
+			c.Set("navigateToChanged", navigateToChanged)
+		}
+		if cmd.Flags().Changed("disableLiveReload") {
+			c.Set("disableLiveReload", disableLiveReload)
+		}
+		if cmd.Flags().Changed("disableFastRender") {
+			c.Set("disableFastRender", disableFastRender)
+		}
+		if serverWatch {
+			c.Set("watch", true)
 		}
 
-		currentServerPort = serverPorts[i] + 1
-	}
+		serverPorts := make([]int, 1)
 
-	c.Set("port", serverPort)
-	if liveReloadPort != -1 {
-		c.Set("liveReloadPort", liveReloadPort)
-	} else {
-		c.Set("liveReloadPort", serverPorts[0])
-	}
+		if c.languages.IsMultihost() {
+			if !serverAppend {
+				return newSystemError("--appendPort=false not supported when in multihost mode")
+			}
+			serverPorts = make([]int, len(c.languages))
+		}
 
-	if languages.IsMultihost() {
-		for i, language := range languages {
-			baseURL, err = fixURL(language, baseURL, serverPorts[i])
+		currentServerPort := serverPort
+
+		for i := 0; i < len(serverPorts); i++ {
+			l, err := net.Listen("tcp", net.JoinHostPort(serverInterface, strconv.Itoa(currentServerPort)))
+			if err == nil {
+				l.Close()
+				serverPorts[i] = currentServerPort
+			} else {
+				if i == 0 && serverCmd.Flags().Changed("port") {
+					// port set explicitly by user -- he/she probably meant it!
+					return newSystemErrorF("Server startup failed: %s", err)
+				}
+				jww.ERROR.Println("port", serverPort, "already in use, attempting to use an available port")
+				sp, err := helpers.FindAvailablePort()
+				if err != nil {
+					return newSystemError("Unable to find alternative port to use:", err)
+				}
+				serverPorts[i] = sp.Port
+			}
+
+			currentServerPort = serverPorts[i] + 1
+		}
+
+		c.serverPorts = serverPorts
+
+		c.Set("port", serverPort)
+		if liveReloadPort != -1 {
+			c.Set("liveReloadPort", liveReloadPort)
+		} else {
+			c.Set("liveReloadPort", serverPorts[0])
+		}
+
+		if c.languages.IsMultihost() {
+			for i, language := range c.languages {
+				baseURL, err := fixURL(language, baseURL, serverPorts[i])
+				if err != nil {
+					return err
+				}
+				language.Set("baseURL", baseURL)
+			}
+		} else {
+			baseURL, err := fixURL(c.Cfg, baseURL, serverPorts[0])
 			if err != nil {
 				return err
 			}
-			language.Set("baseURL", baseURL)
+			c.Set("baseURL", baseURL)
 		}
-	} else {
-		baseURL, err = fixURL(c.Cfg, baseURL, serverPorts[0])
-		if err != nil {
-			return err
-		}
-		c.Set("baseURL", baseURL)
+
+		return nil
+
 	}
 
 	if err := memStats(); err != nil {
 		jww.ERROR.Println("memstats error:", err)
 	}
 
-	// If a Destination is provided via flag write to disk
-	if destination != "" {
-		renderToDisk = true
-	}
-
-	// Hugo writes the output to memory instead of the disk
-	if !renderToDisk {
-		cfg.Fs.Destination = new(afero.MemMapFs)
-		// Rendering to memoryFS, publish to Root regardless of publishDir.
-		c.Set("publishDir", "/")
+	c, err := InitializeConfig(true, cfgInit, serverCmd)
+	if err != nil {
+		return err
 	}
 
 	if err := c.build(serverWatch); err != nil {
@@ -216,6 +206,10 @@ func server(cmd *cobra.Command, args []string) error {
 
 	for _, s := range Hugo.Sites {
 		s.RegisterMediaTypes()
+	}
+
+	if serverWatch {
+		c.watchConfig()
 	}
 
 	// Watch runs its own server as part of the routine
@@ -246,16 +240,15 @@ func server(cmd *cobra.Command, args []string) error {
 }
 
 type fileServer struct {
-	ports    []int
 	baseURLs []string
 	roots    []string
 	c        *commandeer
 }
 
-func (f *fileServer) createEndpoint(i int) (*http.ServeMux, string, error) {
+func (f *fileServer) createEndpoint(i int) (*http.ServeMux, string, string, error) {
 	baseURL := f.baseURLs[i]
 	root := f.roots[i]
-	port := f.ports[i]
+	port := f.c.serverPorts[i]
 
 	publishDir := f.c.Cfg.GetString("publishDir")
 
@@ -286,7 +279,7 @@ func (f *fileServer) createEndpoint(i int) (*http.ServeMux, string, error) {
 	// We're only interested in the path
 	u, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, "", fmt.Errorf("Invalid baseURL: %s", err)
+		return nil, "", "", fmt.Errorf("Invalid baseURL: %s", err)
 	}
 
 	decorate := func(h http.Handler) http.Handler {
@@ -317,7 +310,7 @@ func (f *fileServer) createEndpoint(i int) (*http.ServeMux, string, error) {
 
 	endpoint := net.JoinHostPort(serverInterface, strconv.Itoa(port))
 
-	return mu, endpoint, nil
+	return mu, u.String(), endpoint, nil
 }
 
 func (c *commandeer) serve() {
@@ -327,24 +320,20 @@ func (c *commandeer) serve() {
 	var (
 		baseURLs []string
 		roots    []string
-		ports    []int
 	)
 
 	if isMultiHost {
 		for _, s := range Hugo.Sites {
 			baseURLs = append(baseURLs, s.BaseURL.String())
 			roots = append(roots, s.Language.Lang)
-			ports = append(ports, s.Info.ServerPort())
 		}
 	} else {
 		s := Hugo.Sites[0]
 		baseURLs = []string{s.BaseURL.String()}
 		roots = []string{""}
-		ports = append(ports, s.Info.ServerPort())
 	}
 
 	srv := &fileServer{
-		ports:    ports,
 		baseURLs: baseURLs,
 		roots:    roots,
 		c:        c,
@@ -357,13 +346,13 @@ func (c *commandeer) serve() {
 	}
 
 	for i, _ := range baseURLs {
-		mu, endpoint, err := srv.createEndpoint(i)
+		mu, serverURL, endpoint, err := srv.createEndpoint(i)
 
 		if doLiveReload {
 			mu.HandleFunc("/livereload.js", livereload.ServeJS)
 			mu.HandleFunc("/livereload", livereload.Handler)
 		}
-		jww.FEEDBACK.Printf("Web Server is available at %s (bind address %s)\n", endpoint, serverInterface)
+		jww.FEEDBACK.Printf("Web Server is available at %s (bind address %s)\n", serverURL, serverInterface)
 		go func() {
 			err = http.ListenAndServe(endpoint, mu)
 			if err != nil {

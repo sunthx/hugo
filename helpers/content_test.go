@@ -19,9 +19,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/viper"
+
 	"github.com/miekg/mmark"
 	"github.com/russross/blackfriday"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const tstHTMLContent = "<!DOCTYPE html><html><head><script src=\"http://two/foobar.js\"></script></head><body><nav><ul><li hugo-nav=\"section_0\"></li><li hugo-nav=\"section_1\"></li></ul></nav><article>content <a href=\"http://two/foobar\">foobar</a>. Follow up</article><p>This is some text.<br>And some more.</p></body></html>"
@@ -71,6 +74,25 @@ func TestStripEmptyNav(t *testing.T) {
 
 func TestBytesToHTML(t *testing.T) {
 	assert.Equal(t, template.HTML("dobedobedo"), BytesToHTML([]byte("dobedobedo")))
+}
+
+func TestNewContentSpec(t *testing.T) {
+	cfg := viper.New()
+	assert := require.New(t)
+
+	cfg.Set("summaryLength", 32)
+	cfg.Set("buildFuture", true)
+	cfg.Set("buildExpired", true)
+	cfg.Set("buildDrafts", true)
+
+	spec, err := NewContentSpec(cfg)
+
+	assert.NoError(err)
+	assert.Equal(32, spec.summaryLength)
+	assert.True(spec.BuildFuture)
+	assert.True(spec.BuildExpired)
+	assert.True(spec.BuildDrafts)
+
 }
 
 var benchmarkTruncateString = strings.Repeat("This is a sentence about nothing.", 20)
@@ -159,7 +181,7 @@ func TestTruncateWordsByRune(t *testing.T) {
 
 func TestGetHTMLRendererFlags(t *testing.T) {
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	renderer := c.getHTMLRenderer(blackfriday.HTML_USE_XHTML, ctx)
 	flags := renderer.GetFlags()
 	if flags&blackfriday.HTML_USE_XHTML != blackfriday.HTML_USE_XHTML {
@@ -186,7 +208,7 @@ func TestGetHTMLRendererAllFlags(t *testing.T) {
 		{blackfriday.HTML_SMARTYPANTS_LATEX_DASHES},
 	}
 	defaultFlags := blackfriday.HTML_USE_XHTML
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.Config.AngledQuotes = true
 	ctx.Config.Fractions = true
 	ctx.Config.HrefTargetBlank = true
@@ -209,7 +231,7 @@ func TestGetHTMLRendererAllFlags(t *testing.T) {
 
 func TestGetHTMLRendererAnchors(t *testing.T) {
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.DocumentID = "testid"
 	ctx.Config.PlainIDAnchors = false
 
@@ -233,7 +255,7 @@ func TestGetHTMLRendererAnchors(t *testing.T) {
 
 func TestGetMmarkHTMLRenderer(t *testing.T) {
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.DocumentID = "testid"
 	ctx.Config.PlainIDAnchors = false
 	actualRenderer := c.getMmarkHTMLRenderer(0, ctx)
@@ -257,7 +279,7 @@ func TestGetMmarkHTMLRenderer(t *testing.T) {
 
 func TestGetMarkdownExtensionsMasksAreRemovedFromExtensions(t *testing.T) {
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.Config.Extensions = []string{"headerId"}
 	ctx.Config.ExtensionsMask = []string{"noIntraEmphasis"}
 
@@ -272,7 +294,7 @@ func TestGetMarkdownExtensionsByDefaultAllExtensionsAreEnabled(t *testing.T) {
 		testFlag int
 	}
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.Config.Extensions = []string{""}
 	ctx.Config.ExtensionsMask = []string{""}
 	allExtensions := []data{
@@ -304,7 +326,7 @@ func TestGetMarkdownExtensionsByDefaultAllExtensionsAreEnabled(t *testing.T) {
 
 func TestGetMarkdownExtensionsAddingFlagsThroughRenderingContext(t *testing.T) {
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.Config.Extensions = []string{"definitionLists"}
 	ctx.Config.ExtensionsMask = []string{""}
 
@@ -316,7 +338,7 @@ func TestGetMarkdownExtensionsAddingFlagsThroughRenderingContext(t *testing.T) {
 
 func TestGetMarkdownRenderer(t *testing.T) {
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.Content = []byte("testContent")
 	actualRenderedMarkdown := c.markdownRender(ctx)
 	expectedRenderedMarkdown := []byte("<p>testContent</p>\n")
@@ -327,7 +349,7 @@ func TestGetMarkdownRenderer(t *testing.T) {
 
 func TestGetMarkdownRendererWithTOC(t *testing.T) {
 	c := newTestContentSpec()
-	ctx := &RenderingContext{RenderTOC: true, Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{RenderTOC: true, Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.Content = []byte("testContent")
 	actualRenderedMarkdown := c.markdownRender(ctx)
 	expectedRenderedMarkdown := []byte("<nav>\n</nav>\n\n<p>testContent</p>\n")
@@ -342,7 +364,7 @@ func TestGetMmarkExtensions(t *testing.T) {
 		testFlag int
 	}
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.Config.Extensions = []string{"tables"}
 	ctx.Config.ExtensionsMask = []string{""}
 	allExtensions := []data{
@@ -371,7 +393,7 @@ func TestGetMmarkExtensions(t *testing.T) {
 
 func TestMmarkRender(t *testing.T) {
 	c := newTestContentSpec()
-	ctx := &RenderingContext{Cfg: c.cfg, Config: c.NewBlackfriday()}
+	ctx := &RenderingContext{Cfg: c.cfg, Config: c.BlackFriday}
 	ctx.Content = []byte("testContent")
 	actualRenderedMarkdown := c.mmarkRender(ctx)
 	expectedRenderedMarkdown := []byte("<p>testContent</p>\n")

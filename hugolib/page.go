@@ -25,6 +25,8 @@ import (
 	"github.com/bep/gitmap"
 
 	"github.com/gohugoio/hugo/helpers"
+	"github.com/gohugoio/hugo/resource"
+
 	"github.com/gohugoio/hugo/output"
 	"github.com/gohugoio/hugo/parser"
 	"github.com/mitchellh/mapstructure"
@@ -80,6 +82,8 @@ const (
 	kindSitemap   = "sitemap"
 	kindRobotsTXT = "robotsTXT"
 	kind404       = "404"
+
+	pageResourceType = "page"
 )
 
 type Page struct {
@@ -100,6 +104,12 @@ type Page struct {
 	// but can now be more intuitively also be fetched directly from .Pages.
 	// This collection will be nil for regular pages.
 	Pages Pages
+
+	// Since Hugo 0.32, a Page can have resources such as images and CSS associated
+	// with itself. The resource will typically be placed relative to the Page,
+	// but templates should use the links (Permalink and RelPermalink)
+	// provided by the Resource object.
+	Resources resource.Resources
 
 	// translations will contain references to this page in other language
 	// if available.
@@ -155,9 +165,6 @@ type Page struct {
 	// workContent is a copy of rawContent that may be mutated during site build.
 	workContent []byte
 
-	// state telling if this is a "new page" or if we have rendered it previously.
-	rendered bool
-
 	// whether the content is in a CJK language.
 	isCJKLanguage bool
 
@@ -168,7 +175,7 @@ type Page struct {
 	plainWords []string
 
 	// rendering configuration
-	renderingConfig *helpers.Blackfriday
+	renderingConfig *helpers.BlackFriday
 
 	// menus
 	pageMenus PageMenus
@@ -218,8 +225,9 @@ type Page struct {
 	Sitemap Sitemap
 
 	URLPath
-	permalink    string
-	relPermalink string
+	permalink        string
+	relPermalink     string
+	relPermalinkBase string // relPermalink without extension
 
 	layoutDescriptor output.LayoutDescriptor
 
@@ -261,6 +269,10 @@ func (p *Page) PubDate() time.Time {
 		return p.PublishDate
 	}
 	return p.Date
+}
+
+func (*Page) ResourceType() string {
+	return pageResourceType
 }
 
 func (p *Page) RSSLink() template.URL {
@@ -700,17 +712,19 @@ func (p *Page) renderContent(content []byte) []byte {
 		Config: p.getRenderingConfig()})
 }
 
-func (p *Page) getRenderingConfig() *helpers.Blackfriday {
+func (p *Page) getRenderingConfig() *helpers.BlackFriday {
 	p.renderingConfigInit.Do(func() {
-		p.renderingConfig = p.s.ContentSpec.NewBlackfriday()
+		bfParam := p.getParamToLower("blackfriday")
+		if bfParam == nil {
+			p.renderingConfig = p.s.ContentSpec.BlackFriday
+			return
+		}
+		// Create a copy so we can modify it.
+		bf := *p.s.ContentSpec.BlackFriday
+		p.renderingConfig = &bf
 
 		if p.Language() == nil {
 			panic(fmt.Sprintf("nil language for %s with source lang %s", p.BaseFileName(), p.lang))
-		}
-
-		bfParam := p.GetParam("blackfriday")
-		if bfParam == nil {
-			return
 		}
 
 		pageParam := cast.ToStringMap(bfParam)
@@ -724,22 +738,29 @@ func (p *Page) getRenderingConfig() *helpers.Blackfriday {
 }
 
 func (s *Site) newPage(filename string) *Page {
-	sp := source.NewSourceSpec(s.Cfg, s.Fs)
-	p := &Page{
+	fi := newFileInfo(
+		s.SourceSpec,
+		s.absContentDir(),
+		filename,
+		nil,
+		bundleNot,
+	)
+	return s.newPageFromFile(fi)
+}
+
+func (s *Site) newPageFromFile(fi *fileInfo) *Page {
+	return &Page{
 		pageInit:    &pageInit{},
-		Kind:        kindFromFilename(filename),
+		Kind:        kindFromFilename(fi.Path()),
 		contentType: "",
-		Source:      Source{File: *sp.NewFile(filename)},
+		Source:      Source{File: fi},
 		Keywords:    []string{}, Sitemap: Sitemap{Priority: -1},
 		Params:       make(map[string]interface{}),
 		translations: make(Pages, 0),
-		sections:     sectionsFromFilename(filename),
+		sections:     sectionsFromDir(fi.Dir()),
 		Site:         &s.Info,
 		s:            s,
 	}
-
-	s.Log.DEBUG.Println("Reading from", p.File.Path())
-	return p
 }
 
 func (p *Page) IsRenderable() bool {
@@ -908,8 +929,8 @@ func (p *Page) LinkTitle() string {
 }
 
 func (p *Page) shouldBuild() bool {
-	return shouldBuild(p.s.Cfg.GetBool("buildFuture"), p.s.Cfg.GetBool("buildExpired"),
-		p.s.Cfg.GetBool("buildDrafts"), p.Draft, p.PublishDate, p.ExpiryDate)
+	return shouldBuild(p.s.BuildFuture, p.s.BuildExpired,
+		p.s.BuildDrafts, p.Draft, p.PublishDate, p.ExpiryDate)
 }
 
 func shouldBuild(buildFuture bool, buildExpired bool, buildDrafts bool, Draft bool,
@@ -965,20 +986,91 @@ func (p *Page) RelPermalink() string {
 	return p.relPermalink
 }
 
-func (p *Page) initURLs() error {
-	if len(p.outputFormats) == 0 {
-		p.outputFormats = p.s.outputFormats[p.Kind]
+func (p *Page) subResourceLinkFactory(base string) string {
+	return path.Join(p.relPermalinkBase, base)
+}
+
+func (p *Page) prepareForRender(cfg *BuildCfg) error {
+	s := p.s
+
+	if !p.shouldRenderTo(s.rc.Format) {
+		// No need to prepare
+		return nil
 	}
-	rel := p.createRelativePermalink()
+
+	var shortcodeUpdate bool
+	if p.shortcodeState != nil {
+		shortcodeUpdate = p.shortcodeState.updateDelta()
+	}
+
+	if !shortcodeUpdate && !cfg.whatChanged.other {
+		// No need to process it again.
+		return nil
+	}
+
+	// If we got this far it means that this is either a new Page pointer
+	// or a template or similar has changed so wee need to do a rerendering
+	// of the shortcodes etc.
+
+	// If in watch mode or if we have multiple output formats,
+	// we need to keep the original so we can
+	// potentially repeat this process on rebuild.
+	needsACopy := p.s.running() || len(p.outputFormats) > 1
+	var workContentCopy []byte
+	if needsACopy {
+		workContentCopy = make([]byte, len(p.workContent))
+		copy(workContentCopy, p.workContent)
+	} else {
+		// Just reuse the same slice.
+		workContentCopy = p.workContent
+	}
+
+	if p.Markup == "markdown" {
+		tmpContent, tmpTableOfContents := helpers.ExtractTOC(workContentCopy)
+		p.TableOfContents = helpers.BytesToHTML(tmpTableOfContents)
+		workContentCopy = tmpContent
+	}
 
 	var err error
-	p.permalink, err = p.s.permalinkForOutputFormat(rel, p.outputFormats[0])
-	if err != nil {
-		return err
+	if workContentCopy, err = handleShortcodes(p, workContentCopy); err != nil {
+		s.Log.ERROR.Printf("Failed to handle shortcodes for page %s: %s", p.BaseFileName(), err)
 	}
-	rel = p.s.PathSpec.PrependBasePath(rel)
-	p.relPermalink = rel
-	p.layoutDescriptor = p.createLayoutDescriptor()
+
+	if p.Markup != "html" {
+
+		// Now we know enough to create a summary of the page and count some words
+		summaryContent, err := p.setUserDefinedSummaryIfProvided(workContentCopy)
+
+		if err != nil {
+			s.Log.ERROR.Printf("Failed to set user defined summary for page %q: %s", p.Path(), err)
+		} else if summaryContent != nil {
+			workContentCopy = summaryContent.content
+		}
+
+		p.Content = helpers.BytesToHTML(workContentCopy)
+
+		if summaryContent == nil {
+			if err := p.setAutoSummary(); err != nil {
+				s.Log.ERROR.Printf("Failed to set user auto summary for page %q: %s", p.pathOrTitle(), err)
+			}
+		}
+
+	} else {
+		p.Content = helpers.BytesToHTML(workContentCopy)
+	}
+
+	//analyze for raw stats
+	p.analyzePage()
+
+	// Handle bundled pages.
+	for _, r := range p.Resources.ByType(pageResourceType) {
+		p.s.PathSpec.ProcessingStats.Incr(&p.s.PathSpec.ProcessingStats.Pages)
+		bp := r.(*Page)
+		if err := bp.prepareForRender(cfg); err != nil {
+			s.Log.ERROR.Printf("Failed to prepare bundled page %q for render: %s", bp.BaseFileName(), err)
+		}
+	}
+
 	return nil
 }
 
@@ -1214,6 +1306,10 @@ func (p *Page) update(f interface{}) error {
 }
 
 func (p *Page) GetParam(key string) interface{} {
+	return p.getParam(key, false)
+}
+
+func (p *Page) getParamToLower(key string) interface{} {
 	return p.getParam(key, true)
 }
 
@@ -1291,7 +1387,7 @@ func (p *Page) HasMenuCurrent(menuID string, me *MenuEntry) bool {
 
 	// The following logic is kept from back when Hugo had both Page and Node types.
 	// TODO(bep) consolidate / clean
-	nme := MenuEntry{Name: p.Title, URL: p.URL()}
+	nme := MenuEntry{Page: p, Name: p.Title, URL: p.URL()}
 
 	for _, child := range me.Children {
 		if nme.IsSameResource(child) {
@@ -1322,7 +1418,7 @@ func (p *Page) IsMenuCurrent(menuID string, inme *MenuEntry) bool {
 
 	// The following logic is kept from back when Hugo had both Page and Node types.
 	// TODO(bep) consolidate / clean
-	me := MenuEntry{Name: p.Title, URL: p.URL()}
+	me := MenuEntry{Page: p, Name: p.Title, URL: p.URL()}
 
 	if !me.IsSameResource(inme) {
 		return false
@@ -1369,7 +1465,7 @@ func (p *Page) Menus() PageMenus {
 		if ms, ok := p.Params["menu"]; ok {
 			link := p.RelPermalink()
 
-			me := MenuEntry{Name: p.LinkTitle(), Weight: p.Weight, URL: link}
+			me := MenuEntry{Page: p, Name: p.LinkTitle(), Weight: p.Weight, URL: link}
 
 			// Could be the name of the menu to attach it to
 			mname, err := cast.ToStringE(ms)
@@ -1399,7 +1495,7 @@ func (p *Page) Menus() PageMenus {
 			}
 
 			for name, menu := range menus {
-				menuEntry := MenuEntry{Name: p.LinkTitle(), URL: link, Weight: p.Weight, Menu: name}
+				menuEntry := MenuEntry{Page: p, Name: p.LinkTitle(), URL: link, Weight: p.Weight, Menu: name}
 				if menu != nil {
 					p.s.Log.DEBUG.Printf("found menu: %q, in %q\n", name, p.Title)
 					ime, err := cast.ToStringMapE(menu)
@@ -1847,15 +1943,12 @@ func (p *Page) addLangPathPrefixIfFlagSet(outfile string, should bool) string {
 	return outfile
 }
 
-func sectionsFromFilename(filename string) []string {
-	var sections []string
-	dir, _ := filepath.Split(filename)
-	dir = strings.TrimSuffix(dir, helpers.FilePathSeparator)
-	if dir == "" {
-		return sections
+func sectionsFromDir(dirname string) []string {
+	dirname = strings.Trim(dirname, helpers.FilePathSeparator)
+	if dirname == "" {
+		return nil
 	}
-	sections = strings.Split(dir, helpers.FilePathSeparator)
-	return sections
+	return strings.Split(dirname, helpers.FilePathSeparator)
 }
 
 const (

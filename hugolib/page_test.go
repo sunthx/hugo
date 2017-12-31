@@ -35,6 +35,7 @@ import (
 var emptyPage = ""
 
 const (
+	homePage                             = "---\ntitle: Home\n---\nHome Page Content\n"
 	simplePage                           = "---\ntitle: Simple\n---\nSimple Page\n"
 	invalidFrontMatterMissing            = "This is a test"
 	renderNoFrontmatter                  = "<!doctype><html><head></head><body>This is a test</body></html>"
@@ -561,7 +562,7 @@ func testAllMarkdownEnginesForPages(t *testing.T,
 	}{
 		{"md", func() bool { return true }},
 		{"mmark", func() bool { return true }},
-		{"ad", func() bool { return helpers.HasAsciidoctor() || helpers.HasAsciidoc() }},
+		{"ad", func() bool { return helpers.HasAsciidoc() }},
 		// TODO(bep) figure a way to include this without too much work.{"html", func() bool { return true }},
 		{"rst", func() bool { return helpers.HasRst() }},
 	}
@@ -595,11 +596,21 @@ func testAllMarkdownEnginesForPages(t *testing.T,
 			writeSource(t, fs, filepath.Join(contentDir, fileSourcePairs[i]), fileSourcePairs[i+1])
 		}
 
+		// Add a content page for the home page
+		homePath := fmt.Sprintf("_index.%s", e.ext)
+		writeSource(t, fs, filepath.Join(contentDir, homePath), homePage)
+
 		s := buildSingleSite(t, deps.DepsCfg{Fs: fs, Cfg: cfg}, BuildCfg{SkipRender: true})
 
 		require.Len(t, s.RegularPages, len(pageSources))
 
 		assertFunc(t, e.ext, s.RegularPages)
+
+		home, err := s.Info.Home()
+		require.NoError(t, err)
+		require.NotNil(t, home)
+		require.Equal(t, homePath, home.Path())
+		require.Contains(t, home.Content, "Home Page Content")
 
 	}
 
@@ -1067,22 +1078,22 @@ func TestDifferentFrontMatterVarTypes(t *testing.T) {
 	_, _ = page.ReadFrom(strings.NewReader(pageWithVariousFrontmatterTypes))
 
 	dateval, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	if page.GetParam("a_string") != "bar" {
-		t.Errorf("frontmatter not handling strings correctly should be %s, got: %s", "bar", page.GetParam("a_string"))
+	if page.getParamToLower("a_string") != "bar" {
+		t.Errorf("frontmatter not handling strings correctly should be %s, got: %s", "bar", page.getParamToLower("a_string"))
 	}
-	if page.GetParam("an_integer") != 1 {
-		t.Errorf("frontmatter not handling ints correctly should be %s, got: %s", "1", page.GetParam("an_integer"))
+	if page.getParamToLower("an_integer") != 1 {
+		t.Errorf("frontmatter not handling ints correctly should be %s, got: %s", "1", page.getParamToLower("an_integer"))
 	}
-	if page.GetParam("a_float") != 1.3 {
-		t.Errorf("frontmatter not handling floats correctly should be %f, got: %s", 1.3, page.GetParam("a_float"))
+	if page.getParamToLower("a_float") != 1.3 {
+		t.Errorf("frontmatter not handling floats correctly should be %f, got: %s", 1.3, page.getParamToLower("a_float"))
 	}
-	if page.GetParam("a_bool") != false {
-		t.Errorf("frontmatter not handling bools correctly should be %t, got: %s", false, page.GetParam("a_bool"))
+	if page.getParamToLower("a_bool") != false {
+		t.Errorf("frontmatter not handling bools correctly should be %t, got: %s", false, page.getParamToLower("a_bool"))
 	}
-	if page.GetParam("a_date") != dateval {
-		t.Errorf("frontmatter not handling dates correctly should be %s, got: %s", dateval, page.GetParam("a_date"))
+	if page.getParamToLower("a_date") != dateval {
+		t.Errorf("frontmatter not handling dates correctly should be %s, got: %s", dateval, page.getParamToLower("a_date"))
 	}
-	param := page.GetParam("a_table")
+	param := page.getParamToLower("a_table")
 	if param == nil {
 		t.Errorf("frontmatter not handling tables correctly should be type of %v, got: type of %v", reflect.TypeOf(page.Params["a_table"]), reflect.TypeOf(param))
 	}
@@ -1458,8 +1469,7 @@ func TestTranslationKey(t *testing.T) {
 	assert.Equal("page/k1", s.RegularPages[0].TranslationKey())
 	p2 := s.RegularPages[1]
 
-	// This is a single language setup
-	assert.Equal("page/sect/simple.en", p2.TranslationKey())
+	assert.Equal("page/sect/simple", p2.TranslationKey())
 
 }
 
@@ -1582,6 +1592,7 @@ tags:
 *some blog content*`))
 
 				s := buildSingleSite(t, deps.DepsCfg{Fs: fs, Cfg: cfg}, BuildCfg{})
+
 				require.Len(t, s.RegularPages, 4)
 
 				pathFunc := func(s string) string {

@@ -17,9 +17,12 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/gohugoio/hugo/helpers"
 )
 
 // pathPattern represents a string which builds up a URL from attributes
@@ -156,9 +159,14 @@ func pageToPermalinkTitle(p *Page, _ string) (string, error) {
 
 // pageToPermalinkFilename returns the URL-safe form of the filename
 func pageToPermalinkFilename(p *Page, _ string) (string, error) {
-	//var extension = p.Source.Ext
-	//var name = p.Source.Path()[0 : len(p.Source.Path())-len(extension)]
-	return p.s.PathSpec.URLize(p.Source.TranslationBaseName()), nil
+	name := p.File.TranslationBaseName()
+	if name == "index" {
+		// Page bundles; the directory name will hopefully have a better name.
+		dir := strings.TrimSuffix(p.File.Dir(), helpers.FilePathSeparator)
+		_, name = filepath.Split(dir)
+	}
+
+	return p.s.PathSpec.URLize(name), nil
 }
 
 // if the page has a slug, return the slug, else return the title
